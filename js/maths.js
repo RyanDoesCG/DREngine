@@ -4,11 +4,46 @@ let sin = Math.sin;
 /////////////////////////////////////////////////
 // Vector
 /////////////////////////////////////////////////
-function vec4      (x, y, z, w) { return new Float32Array([ x, y, z, w ]); }
-function dot       (lhs, rhs)   { return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2] + lhs[3] * rhs[3]; }
-function addv      (lhs, rhs)   { return new Float32Array([ lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3] ]); }
-function multiplys (lhs, rhs)   { return new Float32Array([ lhs[0] * rhs, lhs[1] * rhs, lhs[2] * rhs, lhs[3] * rhs ]); }
-function cross     (lhs, rhs)   { return new Float32Array([lhs[1] * rhs[2] - lhs[2] * rhs[1],lhs[2] * rhs[0] - lhs[0] * rhs[2],lhs[0] * rhs[1] - lhs[1] * rhs[0] ]) }
+function vec4  (x, y, z, w) 
+{ 
+    return new Float32Array([ x, y, z, w ]); 
+
+}
+
+function dot (lhs, rhs) 
+{ 
+    return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2] + lhs[3] * rhs[3]; 
+}
+
+function addv (lhs, rhs)
+{ 
+    return vec4(lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3]); 
+}
+
+function multiplys (lhs, rhs)
+{ 
+    return vec4(lhs[0] * rhs, lhs[1] * rhs, lhs[2] * rhs, lhs[3] * rhs ); 
+}
+
+function divides (lhs, rhs) 
+{ 
+    return vec4(lhs[0] / rhs, lhs[1] / rhs, lhs[2] / rhs, lhs[3] / rhs) 
+}
+
+function cross (lhs, rhs)
+{ 
+    return vec4(lhs[1] * rhs[2] - lhs[2] * rhs[1], lhs[2] * rhs[0] - lhs[0] * rhs[2], lhs[0] * rhs[1] - lhs[1] * rhs[0]) 
+}
+
+function length (v)
+{ 
+    return Math.sqrt(dot(v, v)) 
+}
+
+function normalize (v) 
+{ 
+    return divides(v, length(v))  
+}
 
 /////////////////////////////////////////////////
 // Matrix

@@ -4,7 +4,7 @@ var basePassVertexShaderSource =
     uniform mat4 proj;
     uniform mat4 view;
     uniform mat4 model;
-    
+
     in vec3 vertex_position;
     in vec3 vertex_normal;
     in vec2 vertex_uv;
@@ -24,7 +24,7 @@ var basePassVertexShaderSource =
 var basePassFragmentShaderSource = 
     `#version 300 es
 
-    precision highp float;
+    precision lowp float;
 
     in vec3 frag_worldpos;
     in vec3 frag_normal;
@@ -43,10 +43,22 @@ var basePassFragmentShaderSource =
                 (fract(uv.y * 20.0) > Thickness)));
     }
 
+    float checkerboard(vec2 uv, float thickness)
+    {
+        uv *= thickness;
+        return mod(floor(uv.x) + floor(uv.y), 2.0);
+    }
+
     void main() 
     {
-        float a = grid(frag_uv, 0.9);
-        out_color = vec4(a, a, a, 1.0);
+        vec2 uv = vec2(0.0, 0.0);
+        if (abs(frag_normal.x) > 0.0) { uv = vec2(frag_worldpos.z, frag_worldpos.y); }
+        if (abs(frag_normal.y) > 0.0) { uv = vec2(frag_worldpos.z, frag_worldpos.x); }
+        if (abs(frag_normal.z) > 0.0) { uv = vec2(frag_worldpos.x, frag_worldpos.y); }
+        uv *= 0.32;
+
+        float d = 0.5;
+        out_color = vec4(d, d, d, 1.0);
         out_normal = vec4(frag_normal, 1.0);
         out_uv = vec4(frag_worldpos, 1.0);
     }`
