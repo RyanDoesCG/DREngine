@@ -30,6 +30,38 @@ function createColourTexture(gl, width, height, format, type)
     return texture;
 }
 
+function createDepthTexture (gl, width, height)
+{
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    const level = 0;
+    const internalFormat = gl.DEPTH_COMPONENT24;
+    const border = 0;
+    const format = gl.DEPTH_COMPONENT;
+    const type = gl.UNSIGNED_INT;
+    const data = null;
+
+    gl.texImage2D(
+        gl.TEXTURE_2D, 
+        level, 
+        internalFormat,
+        width, 
+        height, 
+        border,
+        format, 
+        type, 
+        data);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+     
+    return texture;
+}
+
 var ImagesLoaded = []; 
 
 function loadTexture(gl, texturePath)

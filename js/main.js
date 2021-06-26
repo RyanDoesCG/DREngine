@@ -23,10 +23,12 @@
     var albedoBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
     var uvBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
+    var depthBuffer  = createDepthTexture(gl, canvas.width, canvas.height)
     var basePassFrameBuffer = createFramebuffer(gl, 
         albedoBuffer, 
         normalBuffer,
-        uvBuffer)
+        uvBuffer,
+        depthBuffer)
 
     var presentPassAlbedoSampler = gl.getUniformLocation(presentPassShaderProgram, "AlbedoBuffer");
     var presentPassNormalSampler = gl.getUniformLocation(presentPassShaderProgram, "NormalBuffer");
@@ -99,9 +101,23 @@
         Math.random()
     ]
 
+    // SCENE
+    var BoxPositions = [
+        [ 0.0, -3.5, 0.0],
+        [ 0.0, 0.0, 0.0],
+
+    ]
+    var BoxSizes = [
+        [ 6.0, 6.0, 6.0 ],
+        [ 1.0, 1.0, 1.0 ],
+    ]
+
     // CAMERA
-    var CameraPosition =  new Float32Array([0.0, 0.0, -2.0])
+    var CameraPosition = new Float32Array([0.0, 0.0, -2.0])
+    var CameraVelocity = new Float32Array([0.0, 0.0, 0.0])
+
     var CameraRotation = new Float32Array([0.0, 0.0, 0.0])
+    var CameraAngularVelocity = new Float32Array([0.0, 0.0, 0.0])
 
     // RENDER PASSES
     function BasePass () {
@@ -109,27 +125,31 @@
         gl.bindFramebuffer(gl.FRAMEBUFFER, basePassFrameBuffer);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.clear(gl.DEPTH_BUFFER_BIT)
         gl.enable(gl.CULL_FACE);
+        gl.enable(gl.DEPTH_TEST)
         gl.cullFace(gl.BACK);
         gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1,gl.COLOR_ATTACHMENT2]);
         gl.useProgram(basePassShaderProgram);
         gl.bindVertexArray(triangleGeometryVertexArray);
 
-        var modelMatrix = identity()
-        modelMatrix = multiplym(translate(0.0, 0.0, 0.0), modelMatrix)
-        modelMatrix = multiplym(rotate(0.0, 0.0, 0.0), modelMatrix)
-        modelMatrix = multiplym(scale(0.5, 0.5, 0.5), modelMatrix)
-        gl.uniformMatrix4fv(basePassModelMatrixLocation, false, modelMatrix);
-        
+        var projMatrix = perspective(100, 0.01, 100.0)
+        gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
+
         var viewMatrix = identity()
         viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], CameraPosition[2]), viewMatrix)
         viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, viewMatrix)
-        
-        var projMatrix = perspective(100, 0.01, 100.0)
-        gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
 
-        gl.drawArrays(gl.TRIANGLES, 0, triangleGeometryPositions.length / 3);
+        for (var i = 0; i < BoxPositions.length; ++i)
+        {
+            var modelMatrix = identity()
+            modelMatrix = multiplym(scale(BoxSizes[i][0], BoxSizes[i][0], BoxSizes[i][0]), modelMatrix)
+            modelMatrix = multiplym(translate(BoxPositions[i][0], BoxPositions[i][1], BoxPositions[i][2]), modelMatrix)
+
+            gl.uniformMatrix4fv(basePassModelMatrixLocation, false, modelMatrix);
+            gl.drawArrays(gl.TRIANGLES, 0, triangleGeometryPositions.length / 3);
+        }
     }
 
     function PresentPass () {
@@ -166,6 +186,7 @@
     var frameID = 0;
     function Loop () {
         PollInput();
+        DoMovement();
 
         if (ImagesLoaded.every(v => v))
         {
@@ -192,57 +213,50 @@
     var DownArrowPressed = false;
 
     function PollInput() {
-        var speed = 0.05
+        var speed = 0.01
 
         var viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), identity())
         var forward = multiplyv(vec4(0.0, 0.0, 1.0, 0.0), viewMatrix) 
-        var right = multiplyv(vec4(1.0, 0.0, 0.0, 0.0), viewMatrix)
+        var right = cross(forward, vec4(0.0, -1.0, 0.0, 0.0))
 
-        if (DPressed) CameraPosition = addv(CameraPosition, multiplys(right,  speed))
-        if (APressed) CameraPosition = addv(CameraPosition, multiplys(right, -speed))
+        ui.innerHTML  = "<p>" + forward[0].toString() + " " + forward[1].toString() + " " + forward[2].toString() + "</p>"
+        ui.innerHTML += "<p>" + right[0].toString() + " " + right[1].toString() + " " + right[2].toString() + "</p>"
 
-        if (WPressed) CameraPosition = addv(CameraPosition, multiplys(forward, speed))
-        if (SPressed) CameraPosition = addv(CameraPosition, multiplys(forward, -speed))
+        if (DPressed) CameraVelocity = addv(CameraVelocity, multiplys(right,  speed))
+        if (APressed) CameraVelocity = addv(CameraVelocity, multiplys(right, -speed))
+        if (WPressed) CameraVelocity = addv(CameraVelocity, multiplys(forward, speed))
+        if (SPressed) CameraVelocity = addv(CameraVelocity, multiplys(forward, -speed))
+        if (QPressed) CameraVelocity[1] -= speed
+        if (EPressed) CameraVelocity[1] += speed
 
-        if (QPressed) CameraPosition[1] -= speed
-        if (EPressed) CameraPosition[1] += speed
-
-        if (LeftArrowPressed) CameraRotation[1] -= speed;
-        if (RightArrowPressed) CameraRotation[1] += speed;
-
-        if (UpArrowPressed) CameraRotation[0] -= speed;
-        if (DownArrowPressed) CameraRotation[0] += speed;
-
-        ui.innerHTML  = "<p>" + CameraPosition[0].toString() + " " + CameraPosition[1].toString() + " " + CameraPosition[2].toString() + "</p>"
-        ui.innerHTML += "<p>" + CameraRotation[0].toString() + " " + CameraRotation[1].toString() + " " + CameraRotation[2].toString() + "</p>"
-        ui.innerHTML += "</br>"
-        ui.innerHTML += "<p>" + forward[0].toString() + " " + forward[1].toString() + " " + forward[2].toString() + "</p>"
+        if (LeftArrowPressed)  CameraAngularVelocity[1] -= speed;
+        if (RightArrowPressed) CameraAngularVelocity[1] += speed;
+        if (UpArrowPressed)    CameraAngularVelocity[0] -= speed;
+        if (DownArrowPressed)  CameraAngularVelocity[0] += speed;
         
     }
 
-    document.addEventListener('keyup', function(event) {
-        if      (event.key == 'a') APressed = false;
-        else if (event.key == 'd') DPressed = false
-        else if (event.key == 's') SPressed = false
-        else if (event.key == 'w') WPressed = false
-        else if (event.key == 'q') QPressed = false
-        else if (event.key == 'e') EPressed = false;
-        else if (event.key == 'ArrowLeft') LeftArrowPressed = false
-        else if (event.key == 'ArrowRight') RightArrowPressed = false
-        else if (event.key == 'ArrowUp') UpArrowPressed = false
-        else if (event.key == 'ArrowDown') DownArrowPressed = false
-    })
+    function DoMovement() {
+        CameraPosition = addv(CameraPosition, CameraVelocity)
+        CameraVelocity = multiplys(CameraVelocity, 0.7)
 
-    document.addEventListener('keydown', function(event) {
-        if      (event.key == 'a') APressed = true
-        else if (event.key == 'd') DPressed = true
-        else if (event.key == 's') SPressed = true
-        else if (event.key == 'w') WPressed = true
-        else if (event.key == 'q') QPressed = true
-        else if (event.key == 'e') EPressed = true
-        else if (event.key == 'ArrowLeft') LeftArrowPressed = true
-        else if (event.key == 'ArrowRight') RightArrowPressed = true
-        else if (event.key == 'ArrowUp') UpArrowPressed = true
-        else if (event.key == 'ArrowDown') DownArrowPressed = true
-    });
+        CameraRotation = addv(CameraRotation, CameraAngularVelocity)
+        CameraAngularVelocity = multiplys(CameraAngularVelocity, 0.8)
+    }
+
+    function flipkey (event) {
+        if      (event.key == 'a') APressed = !APressed
+        else if (event.key == 'd') DPressed = !DPressed
+        else if (event.key == 's') SPressed = !SPressed
+        else if (event.key == 'w') WPressed = !WPressed
+        else if (event.key == 'q') QPressed = !QPressed
+        else if (event.key == 'e') EPressed = !EPressed
+        else if (event.key == 'ArrowLeft') LeftArrowPressed = !LeftArrowPressed
+        else if (event.key == 'ArrowRight') RightArrowPressed = !RightArrowPressed
+        else if (event.key == 'ArrowUp') UpArrowPressed = !UpArrowPressed
+        else if (event.key == 'ArrowDown') DownArrowPressed = !DownArrowPressed
+    }
+
+    document.addEventListener('keyup', flipkey)
+    document.addEventListener('keydown', flipkey);
 }())

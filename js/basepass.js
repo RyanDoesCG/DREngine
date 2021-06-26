@@ -1,10 +1,10 @@
 var basePassVertexShaderSource = 
     `#version 300 es
 
-    uniform mat4 model;
-    uniform mat4 view;
     uniform mat4 proj;
-
+    uniform mat4 view;
+    uniform mat4 model;
+    
     in vec3 vertex_position;
     in vec3 vertex_normal;
     in vec2 vertex_uv;

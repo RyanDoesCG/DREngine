@@ -10,7 +10,6 @@ var presentPassVertexShaderSource =
     {
         gl_Position = vertex_position;
         frag_uvs = vertex_uvs;
-        //frag_uvs.y = 1.0 - frag_uvs.y;
     }`
 
 var presentPassFragmentShaderHeaderSource = 
@@ -34,7 +33,7 @@ var presentPassFragmentShaderHeaderSource =
 
 var presentPassFragmentShaderFooterSource = `
     #define AA_SAMPLES 1
-    #define AA_OFFSET 0.00
+    #define AA_OFFSET 0.000
 
     float seed = 0.0;
     float random () 
@@ -59,8 +58,7 @@ var presentPassFragmentShaderFooterSource = `
             vec4 Albedo = texture(AlbedoBuffer, offset_uvs);
             vec4 Normal = texture(NormalBuffer, offset_uvs);
             vec4 WorldPosition = texture(UVBuffer, offset_uvs);
-           // Result += (Normal + 1.0) * 0.5;
-            Result += Normal;
+            Result += Albedo;
         }
 
         out_color = Result / float(AA_SAMPLES);

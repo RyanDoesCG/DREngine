@@ -8,6 +8,7 @@ function vec4      (x, y, z, w) { return new Float32Array([ x, y, z, w ]); }
 function dot       (lhs, rhs)   { return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2] + lhs[3] * rhs[3]; }
 function addv      (lhs, rhs)   { return new Float32Array([ lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3] ]); }
 function multiplys (lhs, rhs)   { return new Float32Array([ lhs[0] * rhs, lhs[1] * rhs, lhs[2] * rhs, lhs[3] * rhs ]); }
+function cross     (lhs, rhs)   { return new Float32Array([lhs[1] * rhs[2] - lhs[2] * rhs[1],lhs[2] * rhs[0] - lhs[0] * rhs[2],lhs[0] * rhs[1] - lhs[1] * rhs[0] ]) }
 
 /////////////////////////////////////////////////
 // Matrix
@@ -124,38 +125,7 @@ function roll (z)
 
 function rotate (x, y, z)
 {
-    var p = pitch(x)
-    var y = yaw(y)
-    var r = roll(z)
-    return multiplym(multiplym(p, y), r)
-}
-
-function view (position, forward, up, right)
-{
-    /*
-    return matrix(
-        right[0], up[0], forward[0], position[0],
-        right[1], up[1], forward[1], position[1],
-        right[2], up[2], forward[2], position[2],
-        0.0,      0.0,   0.0,        1.0
-    )
-    */
-
-    var t = matrix(
-        1.0, 0.0, 0.0, -position[0],
-        0.0, 1.0, 0.0, -position[1],
-        0.0, 0.0, 1.0, -position[2],
-        0.0, 0.0, 0.0, 1.0
-    );
-
-    var s = matrix(
-        right[0], up[0], forward[0], 0.0,
-        right[1], up[1], forward[1], 0.0,
-        right[2], up[2], forward[2], 0.0,
-        0.0,      0.0,   0.0,        1.0
-    );
-    
-    return multiplym(s, t)
+    return multiplym(multiplym(pitch(x), yaw(y)), roll(z))
 }
 
 function perspective (fov, near, far)
@@ -192,8 +162,7 @@ function basic ()
         1.0, 0.0, 0.0, 0.0,
         0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    )
+        0.0, 0.0, 0.0, 1.0)
 }
 
 function print(matrix)

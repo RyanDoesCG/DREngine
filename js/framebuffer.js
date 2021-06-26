@@ -31,7 +31,7 @@ function createFramebuffer(gl, targetA, targetB)
     return framebuffer;
 }
 
-function createFramebuffer(gl, targetA, targetB, targetC)
+function createFramebuffer(gl, targetA, targetB, targetC, targetD)
 {
     const framebuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -52,6 +52,12 @@ function createFramebuffer(gl, targetA, targetB, targetC)
         gl.COLOR_ATTACHMENT2, 
         gl.TEXTURE_2D, 
         targetC, 
+        0);
+    gl.framebufferTexture2D(
+        gl.FRAMEBUFFER, 
+        gl.DEPTH_ATTACHMENT, 
+        gl.TEXTURE_2D, 
+        targetD, 
         0);
     console.log(gl.checkFramebufferStatus(gl.FRAMEBUFFER))
     return framebuffer;
