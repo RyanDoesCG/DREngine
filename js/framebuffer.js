@@ -27,7 +27,7 @@ function createFramebuffer(gl, targetA, targetB)
         gl.TEXTURE_2D, 
         targetB, 
         0);
-    console.log(gl.checkFramebufferStatus(gl.FRAMEBUFFER))
+   // console.log(gl.checkFramebufferStatus(gl.FRAMEBUFFER))
     return framebuffer;
 }
 
@@ -59,6 +59,6 @@ function createFramebuffer(gl, targetA, targetB, targetC, targetD)
         gl.TEXTURE_2D, 
         targetD, 
         0);
-    console.log(gl.checkFramebufferStatus(gl.FRAMEBUFFER))
+   // console.log(gl.checkFramebufferStatus(gl.FRAMEBUFFER))
     return framebuffer;
 }

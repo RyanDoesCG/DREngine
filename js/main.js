@@ -36,8 +36,17 @@
         uvBuffer,
         depthBuffer)
 
-    var AABuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
-    var LightingPassFrameBuffer = createFramebuffer(gl, AABuffer)
+    var LightingBuffers = [15]
+    for (var i = 0; i < 15; ++i)
+        LightingBuffers[i] = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
+
+    console.log(LightingBuffers)
+
+    var ViewTransforms = [15]
+    for (var i = 0; i < 15; ++i)
+        ViewTransforms[i] = identity()
+
+    var LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
 
     var basePassModelMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "model")
     var basePassViewMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "view");
@@ -51,8 +60,31 @@
     var LightingPassNormalSampler = gl.getUniformLocation(LightingPassShaderProgram, "NormalBuffer");
     var LightingPassUVSampler     = gl.getUniformLocation(LightingPassShaderProgram, "UVBuffer");
     var LightingPassTimeUniform = gl.getUniformLocation(LightingPassShaderProgram, "Time")
+    var LightingPassValidFramesUniform = gl.getUniformLocation(LightingPassShaderProgram, "ValidFrames")
 
-    var presentPassAABufferSampler = gl.getUniformLocation(PresentPassShaderProgram, "AABuffer")
+    var presentPassDepthBufferSampler = gl.getUniformLocation(PresentPassShaderProgram, "DepthBuffer")
+    var presentPassFrameBufferSamplers = gl.getUniformLocation(PresentPassShaderProgram, "Frames")
+
+    var presentPassView0Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View0")
+    var presentPassView1Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View1")
+    var presentPassView2Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View2")
+    var presentPassView3Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View3")
+    var presentPassView4Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View4")
+    var presentPassView5Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View5")
+    var presentPassView6Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View6")
+    var presentPassView7Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View7")
+    var presentPassView8Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View8")
+    var presentPassView9Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View9")
+    var presentPassView10Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View10")
+    var presentPassView11Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View11")
+    var presentPassView12Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View12")
+    var presentPassView13Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View13")
+    var presentPassView14Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View14")
+
+    var presentPassCameraPositionUniform = gl.getUniformLocation(PresentPassShaderProgram, "CameraPosition")
+
+    var presentPassNearUniform = gl.getUniformLocation(PresentPassShaderProgram, "Near")
+    var presentPassFarUniform = gl.getUniformLocation(PresentPassShaderProgram, "Far")
     var presentPassTimeUniform = gl.getUniformLocation(PresentPassShaderProgram, "Time")
     
     // Screen Pass Geometry Resources
@@ -134,11 +166,15 @@
     var LastCameraRotation = CameraRotation
     var ViewTransformHasChanged = true;
 
+    var Near = 0.01
+    var Far = 50.0
+    var FOV = 45.0;
+
     // RENDER PASSES
     function BasePass () {
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.bindFramebuffer(gl.FRAMEBUFFER, basePassFrameBuffer);
-        gl.clearColor(1.0, 0.0, 0.0, 0.0);
+        gl.clearColor(1.0, 1.0, 1.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.clear(gl.DEPTH_BUFFER_BIT)
         gl.enable(gl.CULL_FACE);
@@ -148,39 +184,49 @@
         gl.useProgram(basePassShaderProgram);
         gl.bindVertexArray(triangleGeometryVertexArray);
 
-        var projMatrix = perspective(45.0, 0.01, 100.0)
+        var projMatrix = perspective(FOV, Near, Far)
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
 
         var viewMatrix = identity()
-        var jitter = (ViewTransformHasChanged) ? 0 : 0.005
+        var jitter = 0.0025
         viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], CameraPosition[2]), viewMatrix)
         viewMatrix = multiplym(translate((-1.0 + Math.random() * 2.0) * jitter, (-1.0 + Math.random() * 2.0) * jitter, 0.0), viewMatrix)
         viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, viewMatrix)
+        
+        var LastView = ViewTransforms.pop();
+        ViewTransforms.unshift(multiplym(projMatrix, viewMatrix))
 
         for (var i = 0; i < BoxPositions.length; ++i)
         {
             var modelMatrix = identity()
             modelMatrix = multiplym(scale(BoxSizes[i][0], BoxSizes[i][1], BoxSizes[i][2]), modelMatrix)
             modelMatrix = multiplym(translate(BoxPositions[i][0], BoxPositions[i][1], BoxPositions[i][2]), modelMatrix)
+
             gl.uniformMatrix4fv(basePassModelMatrixLocation, false, modelMatrix);
             gl.drawArrays(gl.TRIANGLES, 0, triangleGeometryPositions.length / 3);
         }
     }
 
     function LightingPass () {
+        
+        var LastBuffer = LightingBuffers.pop();
+        LightingBuffers.unshift(LastBuffer);
+
+        LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, LightingPassFrameBuffer);
-        gl.enable(gl.BLEND);
-        gl.blendEquation(gl.FUNC_ADD);
-        gl.blendFunc(gl.ONE, gl.ONE)
+        //gl.enable(gl.BLEND);
+        //gl.blendEquation(gl.FUNC_ADD);
+        //gl.blendFunc(gl.ONE, gl.ONE)
         gl.useProgram(LightingPassShaderProgram);
 
-        if (ViewTransformHasChanged)
-        {
-            gl.clearColor(0.0, 0.0, 0.0, 0.0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-            frameID = 1
-        }
+ //       if (ViewTransformHasChanged)
+ //       {
+ //           gl.clearColor(1.0, 1.0, 1.0, 1.0);
+ //           gl.clear(gl.COLOR_BUFFER_BIT);
+ //           frameID = 1
+ //       }
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, albedoBuffer);
@@ -213,8 +259,62 @@
         gl.useProgram(PresentPassShaderProgram);
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, AABuffer);
-        gl.uniform1i(presentPassAABufferSampler, 0);
+        gl.bindTexture(gl.TEXTURE_2D, depthBuffer);
+        gl.uniform1i(presentPassDepthBufferSampler, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[0]);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[1]);
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[2]);
+        gl.activeTexture(gl.TEXTURE4);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[3]);
+        gl.activeTexture(gl.TEXTURE5);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[4]);
+        gl.activeTexture(gl.TEXTURE6);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[5]);
+        gl.activeTexture(gl.TEXTURE7);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[6]);
+        gl.activeTexture(gl.TEXTURE8);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[7]);
+        gl.activeTexture(gl.TEXTURE9);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[8]);
+        gl.activeTexture(gl.TEXTURE10);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[9]);
+        gl.activeTexture(gl.TEXTURE11);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[10]);
+        gl.activeTexture(gl.TEXTURE12);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[11]);
+        gl.activeTexture(gl.TEXTURE13);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[12]);
+        gl.activeTexture(gl.TEXTURE14);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[13]);
+        gl.activeTexture(gl.TEXTURE15);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[14]);
+        gl.activeTexture(gl.TEXTURE16);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[15]);
+        gl.uniform1iv(presentPassFrameBufferSamplers, [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ])
+
+        gl.uniformMatrix4fv(presentPassView0Uniform,  false, ViewTransforms[0])
+        gl.uniformMatrix4fv(presentPassView1Uniform,  false, ViewTransforms[1])
+        gl.uniformMatrix4fv(presentPassView2Uniform,  false, ViewTransforms[2])
+        gl.uniformMatrix4fv(presentPassView3Uniform,  false, ViewTransforms[3])
+        gl.uniformMatrix4fv(presentPassView4Uniform,  false, ViewTransforms[4])
+        gl.uniformMatrix4fv(presentPassView5Uniform,  false, ViewTransforms[5])
+        gl.uniformMatrix4fv(presentPassView6Uniform,  false, ViewTransforms[6])
+        gl.uniformMatrix4fv(presentPassView7Uniform,  false, ViewTransforms[7])
+        gl.uniformMatrix4fv(presentPassView8Uniform,  false, ViewTransforms[8])
+        gl.uniformMatrix4fv(presentPassView9Uniform,  false, ViewTransforms[9])
+        gl.uniformMatrix4fv(presentPassView10Uniform, false, ViewTransforms[10])
+        gl.uniformMatrix4fv(presentPassView11Uniform, false, ViewTransforms[11])
+        gl.uniformMatrix4fv(presentPassView12Uniform, false, ViewTransforms[12])
+        gl.uniformMatrix4fv(presentPassView13Uniform, false, ViewTransforms[13])
+        gl.uniformMatrix4fv(presentPassView14Uniform, false, ViewTransforms[14])
+
+        gl.uniform3fv(presentPassCameraPositionUniform, CameraPosition)
+
+        gl.uniform1f(presentPassNearUniform, Near);
+        gl.uniform1f(presentPassFarUniform, Far);
         gl.uniform1f(presentPassTimeUniform, frameID);
 
         gl.bindVertexArray(screenGeometryVertexArray);
@@ -224,7 +324,9 @@
     function Render () {
         BasePass();
         LightingPass();
+
         PresentPass();
+        frameID++;
     }
 
     var frameID = 1;
@@ -237,11 +339,8 @@
             Render();
         }
 
-        frameID++;
         requestAnimationFrame(Loop)
     }
-
-    Loop()
 
     var APressed = false;
     var DPressed = false;
@@ -282,7 +381,7 @@
             CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
         }
 
-        var lookSpeed = 0.01
+        var lookSpeed = 0.005
         if (LeftArrowPressed)  CameraAngularVelocity[1] -= lookSpeed;
         if (RightArrowPressed) CameraAngularVelocity[1] += lookSpeed;
         if (UpArrowPressed)    CameraAngularVelocity[0] -= lookSpeed;
@@ -316,6 +415,12 @@
 
         ui.innerHTML = "<p>" + ViewTransformHasChanged + "</p>"
 
+        document.cookie = "LastCameraX="     + CameraPosition[0];
+        document.cookie = "LastCameraY="     + CameraPosition[1];
+        document.cookie = "LastCameraZ="     + CameraPosition[2];
+        document.cookie = "LastCameraRotationX=" + CameraRotation[0];
+        document.cookie = "LastCameraRotationY=" + CameraRotation[1];
+        document.cookie = "LastCameraRotationZ=" + CameraRotation[2];
 
     }
 
@@ -338,4 +443,37 @@
 
     document.addEventListener('keyup', flipkey)
     document.addEventListener('keydown', flipkey);
+
+    /*
+    var CookieRecord = document.cookie;
+    console.log(CookieRecord);
+
+    var IndividualCookies = CookieRecord.split(' ');
+    if (CookieRecord.includes("LastCameraX"))
+    {
+      for (var i = 0; i < IndividualCookies.length; ++i)
+      {
+        if      (IndividualCookies[i].includes("LastCameraX")) 
+            CameraPosition[0] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraY")) 
+            CameraPosition[1] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraZ")) 
+            CameraPosition[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
+      }
+    }
+
+    if (CookieRecord.includes("LastCameraRotationX"))
+    {
+      for (var i = 0; i < IndividualCookies.length; ++i)
+      {
+        if      (IndividualCookies[i].includes("LastCameraRotationX")) 
+            CameraRotation[0] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraRotationY")) 
+            CameraRotation[1] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraRotationZ")) 
+            CameraRotation[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
+      }
+    }
+    */
+    Loop()
 }())

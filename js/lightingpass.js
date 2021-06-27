@@ -20,10 +20,11 @@ var LightingPassFragmentShaderHeaderSource =
     uniform sampler2D AlbedoBuffer;
     uniform sampler2D NormalBuffer;
     uniform sampler2D UVBuffer;
+    uniform sampler2D DepthBuffer;
 
     uniform float Time;
 
-    #define N_LIGHTS 5
+    #define N_LIGHTS 1
     vec3  LightPositions[N_LIGHTS];
     vec3  LightColours[N_LIGHTS];
     float LightPowers[N_LIGHTS];
@@ -48,16 +49,13 @@ var LightingPassFragmentShaderFooterSource = `
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
 
         LightPositions[0] = vec3( 0.0, 3.8,  0.0);
-        LightPositions[1] = vec3( 1.8, 3.8,  1.8);
-        LightPositions[2] = vec3(-1.8, 3.8,  1.8);
-        LightPositions[3] = vec3( 1.8, 3.8, -1.8);
-        LightPositions[4] = vec3(-1.8, 3.8, -1.8);
 
         for (int i = 0; i < N_LIGHTS; ++i)
         {
+            float h = 0.8;
             vec3 L = normalize(LightPositions[i] - WorldPosition.xyz);
             float d = max(dot(L, Normal.xyz), 0.0);
-    
+            d = d * h + 1.0 - h;
             Result.xyz += Albedo.xyz * d;
         }
 
