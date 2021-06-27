@@ -51,6 +51,7 @@
     var basePassModelMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "model")
     var basePassViewMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "view");
     var basePassProjMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "proj")
+    var basePassTimeUniform = gl.getUniformLocation(basePassShaderProgram, "Time")
 
     var LightingPassLightPositionsUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPositions")
     var LightingPassLightColoursUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightColours")
@@ -184,13 +185,13 @@
         gl.useProgram(basePassShaderProgram);
         gl.bindVertexArray(triangleGeometryVertexArray);
 
+        gl.uniform1f(basePassTimeUniform, frameID);
+
         var projMatrix = perspective(FOV, Near, Far)
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
 
         var viewMatrix = identity()
-        var jitter = 0.0025
         viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], CameraPosition[2]), viewMatrix)
-        viewMatrix = multiplym(translate((-1.0 + Math.random() * 2.0) * jitter, (-1.0 + Math.random() * 2.0) * jitter, 0.0), viewMatrix)
         viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, viewMatrix)
         
@@ -444,7 +445,7 @@
     document.addEventListener('keyup', flipkey)
     document.addEventListener('keydown', flipkey);
 
-    /*
+    
     var CookieRecord = document.cookie;
     console.log(CookieRecord);
 
@@ -474,6 +475,6 @@
             CameraRotation[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
       }
     }
-    */
+    
     Loop()
 }())

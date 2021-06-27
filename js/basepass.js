@@ -5,6 +5,8 @@ var basePassVertexShaderSource =
     uniform mat4 view;
     uniform mat4 model;
 
+    uniform float Time;
+
     in vec3 vertex_position;
     in vec3 vertex_normal;
     in vec2 vertex_uv;
@@ -13,9 +15,21 @@ var basePassVertexShaderSource =
     out vec3 frag_normal;
     out vec2 frag_uv;
 
+    float random (vec2 st) {
+        return fract(sin(dot(st.xy,
+                             vec2(12.9898,78.233)))*
+            43758.5453123);
+    }    
+
     void main() 
     {
-        gl_Position = proj * view * model * vec4(vertex_position, 1.0);
+        const float jitter = 0.005;
+
+        mat4 jitter_proj = proj;
+        jitter_proj[2][0] = random(vec2(Time, 0.0)) * jitter;
+        jitter_proj[2][1] = random(vec2(0.0, Time)) * jitter;
+
+        gl_Position = jitter_proj * view * model * vec4(vertex_position, 1.0);
         frag_worldpos = (model * vec4(vertex_position, 1.0)).xyz;
         frag_normal = (transpose(inverse(model)) * vec4(vertex_normal, 0.0)).xyz;
         frag_uv = vertex_uv;

@@ -7,7 +7,6 @@ let sin = Math.sin;
 function vec4  (x, y, z, w) 
 { 
     return new Float32Array([ x, y, z, w ]); 
-
 }
 
 function dot (lhs, rhs) 
