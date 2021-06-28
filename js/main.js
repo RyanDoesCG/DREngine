@@ -2,6 +2,8 @@
     var canvas = document.getElementById('canv')
     var gl = canvas.getContext("webgl2")
     var ui = document.getElementById("ui")
+    var notes = document.getElementById("notes")
+    var size = document.getElementById("size")
 
     var extensions = gl.getSupportedExtensions();
     console.log(extensions)
@@ -19,15 +21,19 @@
             LightingPassFragmentShaderHeaderSource +
             LightingPassFragmentShaderFooterSource));
 
-    var PresentPassShaderProgram = createProgram(gl,
-        createShader(gl, gl.VERTEX_SHADER, presentPassVertexShaderSource),
+    var TAAPassShaderProgram = createProgram(gl,
+        createShader(gl, gl.VERTEX_SHADER, TAAPassVertexShaderSource),
         createShader(gl, gl.FRAGMENT_SHADER, 
-            presentPassFragmentShaderHeaderSource +
-            presentPassFragmentShaderFooterSource))
+            TAAPassFragmentShaderHeaderSource +
+            TAAPassFragmentShaderFooterSource))
+
+    var SharpenPassShaderProram = createProgram(gl, 
+        createShader(gl, gl.VERTEX_SHADER, SharpenPassVertexShaderSource),
+        createShader(gl, gl.FRAGMENT_SHADER, SharpenPassFragmentShaderSource))
 
     // FRAME BUFFERS
     var albedoBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
-    var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
+    var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var uvBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
     var depthBuffer  = createDepthTexture(gl, canvas.width, canvas.height)
     var basePassFrameBuffer = createFramebuffer(gl, 
@@ -40,7 +46,9 @@
     for (var i = 0; i < 15; ++i)
         LightingBuffers[i] = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
 
-    console.log(LightingBuffers)
+    var AABuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
+    var AAFrameBuffer = createFramebuffer(gl, 
+        AABuffer)
 
     var ViewTransforms = [15]
     for (var i = 0; i < 15; ++i)
@@ -57,37 +65,47 @@
     var LightingPassLightColoursUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightColours")
     var LightingPassLightPowersUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPowers")
 
+    var LightingPassBoxPositions = gl.getUniformLocation(LightingPassShaderProgram, "BoxPositions")
+    var LightingPassBoxSizes = gl.getUniformLocation(LightingPassShaderProgram, "AABoxSizes")
+
     var LightingPassAlbedoSampler = gl.getUniformLocation(LightingPassShaderProgram, "AlbedoBuffer");
     var LightingPassNormalSampler = gl.getUniformLocation(LightingPassShaderProgram, "NormalBuffer");
     var LightingPassUVSampler     = gl.getUniformLocation(LightingPassShaderProgram, "UVBuffer");
     var LightingPassTimeUniform = gl.getUniformLocation(LightingPassShaderProgram, "Time")
-    var LightingPassValidFramesUniform = gl.getUniformLocation(LightingPassShaderProgram, "ValidFrames")
+    var LightingPassViewUniform = gl.getUniformLocation(LightingPassShaderProgram, "View");
+    var LightingPassCameraPositionUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraPosition")
+    var LightingPassCameraForwardUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraForward")
+    var LightingPassCameraRightUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraRight")
 
-    var presentPassDepthBufferSampler = gl.getUniformLocation(PresentPassShaderProgram, "DepthBuffer")
-    var presentPassFrameBufferSamplers = gl.getUniformLocation(PresentPassShaderProgram, "Frames")
+    var TAAPassDepthBufferSampler = gl.getUniformLocation(TAAPassShaderProgram, "DepthBuffer")
+    var TAAPassFrameBufferSamplers = gl.getUniformLocation(TAAPassShaderProgram, "Frames")
 
-    var presentPassView0Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View0")
-    var presentPassView1Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View1")
-    var presentPassView2Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View2")
-    var presentPassView3Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View3")
-    var presentPassView4Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View4")
-    var presentPassView5Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View5")
-    var presentPassView6Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View6")
-    var presentPassView7Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View7")
-    var presentPassView8Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View8")
-    var presentPassView9Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View9")
-    var presentPassView10Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View10")
-    var presentPassView11Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View11")
-    var presentPassView12Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View12")
-    var presentPassView13Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View13")
-    var presentPassView14Uniform = gl.getUniformLocation(PresentPassShaderProgram, "View14")
+    var TAAPassView0Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View0")
+    var TAAPassView1Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View1")
+    var TAAPassView2Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View2")
+    var TAAPassView3Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View3")
+    var TAAPassView4Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View4")
+    var TAAPassView5Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View5")
+    var TAAPassView6Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View6")
+    var TAAPassView7Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View7")
+    var TAAPassView8Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View8")
+    var TAAPassView9Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View9")
+    var TAAPassView10Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View10")
+    var TAAPassView11Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View11")
+    var TAAPassView12Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View12")
+    var TAAPassView13Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View13")
+    var TAAPassView14Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View14")
 
-    var presentPassCameraPositionUniform = gl.getUniformLocation(PresentPassShaderProgram, "CameraPosition")
+    var TAAPassCameraPositionUniform = gl.getUniformLocation(TAAPassShaderProgram, "CameraPosition")
+    var TAAPassCameraForwardUniform = gl.getUniformLocation(TAAPassShaderProgram, "CameraForward")
 
-    var presentPassNearUniform = gl.getUniformLocation(PresentPassShaderProgram, "Near")
-    var presentPassFarUniform = gl.getUniformLocation(PresentPassShaderProgram, "Far")
-    var presentPassTimeUniform = gl.getUniformLocation(PresentPassShaderProgram, "Time")
+
+    var TAAPassNearUniform = gl.getUniformLocation(TAAPassShaderProgram, "Near")
+    var TAAPassFarUniform = gl.getUniformLocation(TAAPassShaderProgram, "Far")
+    var TAAPassTimeUniform = gl.getUniformLocation(TAAPassShaderProgram, "Time")
     
+    var SharpenPassFramebufferSampler = gl.getUniformLocation(SharpenPassShaderProram, "FrameBuffer")
+
     // Screen Pass Geometry Resources
     var screenGeometryVertexArray = gl.createVertexArray();
     gl.bindVertexArray(screenGeometryVertexArray);
@@ -137,28 +155,25 @@
 
     // SCENE
     var BoxPositions = [
-        [ 0.0, 0.0, 0.0],
-        [ 2.0, 2.0, 0.0],
-        [ -2.0, 2.0, 0.0],
-        [ 0.0, 2.0, -1.95],
-        [ 0.0, 4.0, 0.0],
+         0.0, 0.0, 0.0,
+         2.0, 2.0, 0.0,
+         -2.0, 2.0, 0.0,
+         0.0, 2.0, -1.95, // z inverted
+         0.0, 4.0, 0.0,
+         0.0, 0.55, 0.0
+        ]
 
-        [ 0.0, 0.55, 0.0],
-
-    ]
     var BoxSizes = [
-        [ 3.9, 0.1, 4.0 ],
-        [ 0.1, 4.1, 4.0 ],
-        [ 0.1, 4.1, 4.0 ],
-        [ 4.0, 4.0, 0.1 ],
-        [ 3.9, 0.1, 4.0 ],
-
-        [ 1.0, 1.0, 1.0 ],
-    ]
+        3.9, 0.1, 4.0,
+        0.1, 4.1, 4.0,
+        0.1, 4.1, 4.0,
+        4.0, 4.0, 0.1,
+        3.9, 0.1, 4.0,
+        1.0, 1.0, 1.0,]
 
     // CAMERA
-    var CameraPosition = new Float32Array([0.0, 2.0, -8.0])
-    var CameraVelocity = new Float32Array([0.0, 0.0, 0.0, 0.0])
+    var CameraPosition = vec4(0.0, 2.0, -8.0, 1.0)
+    var CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
 
     var CameraRotation = new Float32Array([0.0, 0.0, 0.0])
     var CameraAngularVelocity = new Float32Array([0.0, 0.0, 0.0])
@@ -170,6 +185,10 @@
     var Near = 0.01
     var Far = 50.0
     var FOV = 45.0;
+
+    var projMatrix = identity();
+    var viewMatrix = identity();
+    var modelMatrix = identity();
 
     // RENDER PASSES
     function BasePass () {
@@ -187,10 +206,10 @@
 
         gl.uniform1f(basePassTimeUniform, frameID);
 
-        var projMatrix = perspective(FOV, Near, Far)
+        projMatrix = perspective(FOV, Near, Far)
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
 
-        var viewMatrix = identity()
+        viewMatrix = identity()
         viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], CameraPosition[2]), viewMatrix)
         viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, viewMatrix)
@@ -198,11 +217,11 @@
         var LastView = ViewTransforms.pop();
         ViewTransforms.unshift(multiplym(projMatrix, viewMatrix))
 
-        for (var i = 0; i < BoxPositions.length; ++i)
+        for (var i = 0; i < BoxPositions.length * 3; i += 3)
         {
-            var modelMatrix = identity()
-            modelMatrix = multiplym(scale(BoxSizes[i][0], BoxSizes[i][1], BoxSizes[i][2]), modelMatrix)
-            modelMatrix = multiplym(translate(BoxPositions[i][0], BoxPositions[i][1], BoxPositions[i][2]), modelMatrix)
+            modelMatrix = identity()
+            modelMatrix = multiplym(scale(BoxSizes[i + 0], BoxSizes[i + 1], BoxSizes[i + 2]), modelMatrix)
+            modelMatrix = multiplym(translate(BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2]), modelMatrix)
 
             gl.uniformMatrix4fv(basePassModelMatrixLocation, false, modelMatrix);
             gl.drawArrays(gl.TRIANGLES, 0, triangleGeometryPositions.length / 3);
@@ -210,16 +229,13 @@
     }
 
     function LightingPass () {
-        
+        gl.viewport(0, 0, canvas.width, canvas.height);
         var LastBuffer = LightingBuffers.pop();
         LightingBuffers.unshift(LastBuffer);
 
         LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, LightingPassFrameBuffer);
-        //gl.enable(gl.BLEND);
-        //gl.blendEquation(gl.FUNC_ADD);
-        //gl.blendFunc(gl.ONE, gl.ONE)
         gl.useProgram(LightingPassShaderProgram);
 
  //       if (ViewTransformHasChanged)
@@ -245,7 +261,16 @@
         gl.uniform3fv(LightingPassLightColoursUniform, LightColours);
         gl.uniform1fv(LightingPassLightPowersUniform, LightPowers);
 
+        gl.uniform3fv(LightingPassBoxPositions, BoxPositions)
+        gl.uniform3fv(LightingPassBoxSizes, BoxSizes)
+
         gl.uniform1f(LightingPassTimeUniform, frameID);
+
+        gl.uniformMatrix4fv(LightingPassViewUniform, false, viewMatrix)
+
+        gl.uniform4fv(LightingPassCameraPositionUniform, CameraPosition)
+        gl.uniform4fv(LightingPassCameraForwardUniform,  multiplyv(vec4(0.0, 0.0, 1.0, 0.0), viewMatrix))
+        gl.uniform4fv(LightingPassCameraRightUniform,    multiplyv(vec4(1.0, 0.0, 0.0, 0.0), viewMatrix))
 
         gl.bindVertexArray(screenGeometryVertexArray);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -253,15 +278,16 @@
         gl.disable(gl.BLEND)
     }
 
-    function PresentPass () {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    function TAAPass () {
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, AAFrameBuffer);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.useProgram(PresentPassShaderProgram);
+        gl.useProgram(TAAPassShaderProgram);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, depthBuffer);
-        gl.uniform1i(presentPassDepthBufferSampler, 0);
+        gl.uniform1i(TAAPassDepthBufferSampler, 0);
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[0]);
         gl.activeTexture(gl.TEXTURE2);
@@ -294,29 +320,47 @@
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[14]);
         gl.activeTexture(gl.TEXTURE16);
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[15]);
-        gl.uniform1iv(presentPassFrameBufferSamplers, [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ])
+        gl.uniform1iv(TAAPassFrameBufferSamplers, [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ])
 
-        gl.uniformMatrix4fv(presentPassView0Uniform,  false, ViewTransforms[0])
-        gl.uniformMatrix4fv(presentPassView1Uniform,  false, ViewTransforms[1])
-        gl.uniformMatrix4fv(presentPassView2Uniform,  false, ViewTransforms[2])
-        gl.uniformMatrix4fv(presentPassView3Uniform,  false, ViewTransforms[3])
-        gl.uniformMatrix4fv(presentPassView4Uniform,  false, ViewTransforms[4])
-        gl.uniformMatrix4fv(presentPassView5Uniform,  false, ViewTransforms[5])
-        gl.uniformMatrix4fv(presentPassView6Uniform,  false, ViewTransforms[6])
-        gl.uniformMatrix4fv(presentPassView7Uniform,  false, ViewTransforms[7])
-        gl.uniformMatrix4fv(presentPassView8Uniform,  false, ViewTransforms[8])
-        gl.uniformMatrix4fv(presentPassView9Uniform,  false, ViewTransforms[9])
-        gl.uniformMatrix4fv(presentPassView10Uniform, false, ViewTransforms[10])
-        gl.uniformMatrix4fv(presentPassView11Uniform, false, ViewTransforms[11])
-        gl.uniformMatrix4fv(presentPassView12Uniform, false, ViewTransforms[12])
-        gl.uniformMatrix4fv(presentPassView13Uniform, false, ViewTransforms[13])
-        gl.uniformMatrix4fv(presentPassView14Uniform, false, ViewTransforms[14])
+        gl.uniformMatrix4fv(TAAPassView0Uniform,  false, ViewTransforms[0])
+        gl.uniformMatrix4fv(TAAPassView1Uniform,  false, ViewTransforms[1])
+        gl.uniformMatrix4fv(TAAPassView2Uniform,  false, ViewTransforms[2])
+        gl.uniformMatrix4fv(TAAPassView3Uniform,  false, ViewTransforms[3])
+        gl.uniformMatrix4fv(TAAPassView4Uniform,  false, ViewTransforms[4])
+        gl.uniformMatrix4fv(TAAPassView5Uniform,  false, ViewTransforms[5])
+        gl.uniformMatrix4fv(TAAPassView6Uniform,  false, ViewTransforms[6])
+        gl.uniformMatrix4fv(TAAPassView7Uniform,  false, ViewTransforms[7])
+        gl.uniformMatrix4fv(TAAPassView8Uniform,  false, ViewTransforms[8])
+        gl.uniformMatrix4fv(TAAPassView9Uniform,  false, ViewTransforms[9])
+        gl.uniformMatrix4fv(TAAPassView10Uniform, false, ViewTransforms[10])
+        gl.uniformMatrix4fv(TAAPassView11Uniform, false, ViewTransforms[11])
+        gl.uniformMatrix4fv(TAAPassView12Uniform, false, ViewTransforms[12])
+        gl.uniformMatrix4fv(TAAPassView13Uniform, false, ViewTransforms[13])
+        gl.uniformMatrix4fv(TAAPassView14Uniform, false, ViewTransforms[14])
 
-        gl.uniform3fv(presentPassCameraPositionUniform, CameraPosition)
+        gl.uniform4fv(TAAPassCameraPositionUniform, CameraPosition)
 
-        gl.uniform1f(presentPassNearUniform, Near);
-        gl.uniform1f(presentPassFarUniform, Far);
-        gl.uniform1f(presentPassTimeUniform, frameID);
+        var Forward = vec4(0.0, 0.0, 1.0, 0.0)
+        gl.uniform4fv(TAAPassCameraPositionUniform, multiplyv(Forward, viewMatrix))
+
+        gl.uniform1f(TAAPassNearUniform, Near);
+        gl.uniform1f(TAAPassFarUniform, Far);
+        gl.uniform1f(TAAPassTimeUniform, frameID);
+
+        gl.bindVertexArray(screenGeometryVertexArray);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    function SharpenPass() {
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(SharpenPassShaderProram);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, AABuffer);
+        gl.uniform1i(SharpenPassFramebufferSampler, 0);
 
         gl.bindVertexArray(screenGeometryVertexArray);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -325,11 +369,12 @@
     function Render () {
         BasePass();
         LightingPass();
-
-        PresentPass();
+        TAAPass();
+        SharpenPass();
         frameID++;
     }
 
+    var hideUI = false;
     var frameID = 1;
     function Loop () {
         PollInput();
@@ -340,6 +385,33 @@
             Render();
         }
 
+        if (hideUI)
+        {
+            ui.style.opacity = "0.0";
+            notes.style.opacity = "0.0";
+            size.style.opacity = "0.0";
+        }
+        else
+        {
+            ui.style.opacity = "1.0";
+            notes.style.opacity = "1.0";
+            size.style.opacity = "1.0";
+        }
+
+        ui.innerHTML = "<p>" + 
+            CameraPosition[0].toFixed(1) + ", " + 
+            CameraPosition[1].toFixed(1) + ", " + 
+            CameraPosition[2].toFixed(1) + "</p>"
+        
+        var CameraForward = multiplyv(vec4(0.0, 0.0, 1.0, 0.0), viewMatrix)
+        ui.innerHTML += "<p>" + 
+            CameraForward[0].toFixed(1) + ", " + 
+            CameraForward[1].toFixed(1) + ", " + 
+            CameraForward[2].toFixed(1) + "</p>"
+
+        size.innerHTML = "<p>" + canvas.width + " x " + canvas.height + "</p>"
+        size.innerHTML += "<p>" + canvas.clientWidth + " x " + canvas.clientHeight + "</p>"
+        
         requestAnimationFrame(Loop)
     }
 
@@ -414,8 +486,6 @@
         LastCameraPosition = CameraPosition
         LastCameraRotation = CameraRotation
 
-        ui.innerHTML = "<p>" + ViewTransformHasChanged + "</p>"
-
         document.cookie = "LastCameraX="     + CameraPosition[0];
         document.cookie = "LastCameraY="     + CameraPosition[1];
         document.cookie = "LastCameraZ="     + CameraPosition[2];
@@ -439,13 +509,20 @@
             else if (event.key == 'ArrowUp')    UpArrowPressed    = !UpArrowPressed
             else if (event.key == 'ArrowDown')  DownArrowPressed  = !DownArrowPressed
         }
+    }
 
+    function handleKeyDown (event)
+    {
+        if (event.key == 'u')
+        {
+            hideUI = !hideUI;
+        }
     }
 
     document.addEventListener('keyup', flipkey)
     document.addEventListener('keydown', flipkey);
+    document.addEventListener('keydown', handleKeyDown);
 
-    
     var CookieRecord = document.cookie;
     console.log(CookieRecord);
 
@@ -475,6 +552,5 @@
             CameraRotation[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
       }
     }
-    
     Loop()
 }())

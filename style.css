@@ -41,5 +41,30 @@ canvas
 }
 
 #ui p {
-    color: white;
+    color: black;
+}
+
+#notes {
+    position: absolute;
+    z-index: 1;
+    color:rgba(0.0, 0.0, 0.0, 0.0);
+    bottom: 20px;  
+    left: 20px;
+}
+
+#notes p {
+    color: black;
+}
+
+#size {
+    position: absolute;
+    z-index: 1;
+    color:rgba(0.0, 0.0, 0.0, 0.0);
+    top: 20px;  
+    right: 20px;
+}
+
+#size p {
+    color: black;
+    text-align: right;
 }

@@ -1,4 +1,4 @@
-var presentPassVertexShaderSource = 
+var TAAPassVertexShaderSource = 
     `#version 300 es
     in vec4 vertex_position;
     in vec2 vertex_uvs;
@@ -9,7 +9,7 @@ var presentPassVertexShaderSource =
         frag_uvs = vertex_uvs;
     }`
 
-var presentPassFragmentShaderHeaderSource = 
+var TAAPassFragmentShaderHeaderSource = 
     `#version 300 es
     precision highp float;
 
@@ -31,7 +31,8 @@ var presentPassFragmentShaderHeaderSource =
     uniform mat4      View13;
     uniform mat4      View14;
 
-    uniform vec3 CameraPosition;
+    uniform vec4 CameraPosition;
+    uniform vec4 CameraForward;
 
     uniform float Near;
     uniform float Far;
@@ -42,7 +43,7 @@ var presentPassFragmentShaderHeaderSource =
     out vec4 out_color;
 `
 
-var presentPassFragmentShaderFooterSource = `
+var TAAPassFragmentShaderFooterSource = `
 
     float linearDepth (float rawDepth)
     {
@@ -50,22 +51,27 @@ var presentPassFragmentShaderFooterSource = `
         return 2.0 * Near * Far / (Far + Near - nDepth * (Far - Near));
     }
 
-    vec4 depthToWorldPosition (float depth)
+    vec3 depthToWorldPosition (float depth)
     {
-        return vec4(0);
+        vec2 uvs = frag_uvs;
+        uvs = (vec2(-1.0) + uvs * 2.0);
+        
+        vec3 origin = CameraPosition.xyz + (vec3(uvs.x, uvs.y, 0.0));
+        vec3 direction = (CameraForward.xyz);
+        return origin + direction * depth;
     }
 
     void main() 
     {
         float z = linearDepth(texture(DepthBuffer, frag_uvs).r);
 
-        vec4 p = depthToWorldPosition(z);
+        vec4 p = vec4(depthToWorldPosition(z), 1.0);
 
         vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
         vec2 uvs = frag_uvs;
 
-        vec4 p0 = View0 * p;
-        //uvs = 0.5 * (p0.xy / p0.w) + 0.5;
+//        vec4 p0 = inverse(View0) * p;
+//        uvs = 0.5 * ((p0.xy ) * 3.0) + 0.5;
         Result += texture(Frames[0], uvs);
 
         vec4 p1 = View1 * p;

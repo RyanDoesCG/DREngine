@@ -15,10 +15,9 @@ var basePassVertexShaderSource =
     out vec3 frag_normal;
     out vec2 frag_uv;
 
-    float random (vec2 st) {
-        return fract(sin(dot(st.xy,
-                             vec2(12.9898,78.233)))*
-            43758.5453123);
+    float random (vec2 st) 
+    {
+        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
     }    
 
     void main() 
@@ -71,8 +70,8 @@ var basePassFragmentShaderSource =
         if (abs(frag_normal.z) > 0.0) { uv = vec2(frag_worldpos.x, frag_worldpos.y); }
         uv *= 0.32;
 
-        float d = 0.5; // grid(uv, 0.9);
+        float d =  grid(uv, 0.9);
         out_color = vec4(d, d, d, 1.0);
-        out_normal = vec4(frag_normal, 1.0);
+        out_normal = vec4((frag_normal + 1.0) * 0.5, 1.0);
         out_uv = vec4(frag_worldpos, 1.0);
     }`

@@ -84,6 +84,16 @@ function transpose (matrix)
         matrix[3], matrix[7], matrix[11], matrix[15]]);
 }
 
+function determinent (matrix)
+{
+    return 1;
+}
+
+function inverse (matrix)
+{
+    return matrix;
+}
+
 function multiplym (lhs, rhs)
 {
     let column0 = new Float32Array([rhs[0],  rhs[1],  rhs[2],  rhs[3]])

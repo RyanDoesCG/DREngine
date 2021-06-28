@@ -6,9 +6,7 @@
         6,  6,  2,  4
     )
 
-    var b = new Float32Array([
-        3, 7, 5, 7
-    ])
+    var b = vec4(3, 7, 5, 7)
 
     var c = multiplyv(b, a)
     console.log(c)
