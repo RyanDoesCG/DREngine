@@ -37,7 +37,7 @@
     // FRAME BUFFERS
     var albedoBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
-    var uvBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
+    var uvBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var depthBuffer  = createDepthTexture(gl, canvas.width, canvas.height)
     var basePassFrameBuffer = createFramebuffer(gl, 
         albedoBuffer, 
@@ -59,26 +59,34 @@
 
     var LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
 
+    // TEXTURES
+    var PerlinNoiseTexture = loadTexture(gl, 'images/noise/simplex.png')
+    var WhiteNoiseTexture = loadTexture(gl, 'images/noise/white.png')
+    var BlueNoiseTexture = loadTexture(gl, 'images/noise/blue.png')
+
+    // UNIFORMS
     var basePassModelMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "model")
     var basePassViewMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "view");
     var basePassProjMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "proj")
     var basePassTimeUniform = gl.getUniformLocation(basePassShaderProgram, "Time")
+
+    var LightingPassPerlinNoiseSampler = gl.getUniformLocation(LightingPassShaderProgram, "PerlinNoise")
+    var LightingPassWhiteNoiseSampler = gl.getUniformLocation(LightingPassShaderProgram, "WhiteNoise")
+    var LightingPassBlueNoiseSampler= gl.getUniformLocation(LightingPassShaderProgram, "BlueNoise")
 
     var LightingPassLightPositionsUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPositions")
     var LightingPassLightColoursUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightColours")
     var LightingPassLightPowersUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPowers")
 
     var LightingPassBoxPositions = gl.getUniformLocation(LightingPassShaderProgram, "BoxPositions")
-    var LightingPassBoxSizes = gl.getUniformLocation(LightingPassShaderProgram, "AABoxSizes")
+    var LightingPassBoxSizes = gl.getUniformLocation(LightingPassShaderProgram, "BoxSizes")
 
     var LightingPassAlbedoSampler = gl.getUniformLocation(LightingPassShaderProgram, "AlbedoBuffer");
     var LightingPassNormalSampler = gl.getUniformLocation(LightingPassShaderProgram, "NormalBuffer");
     var LightingPassUVSampler     = gl.getUniformLocation(LightingPassShaderProgram, "UVBuffer");
     var LightingPassTimeUniform = gl.getUniformLocation(LightingPassShaderProgram, "Time")
-    var LightingPassViewUniform = gl.getUniformLocation(LightingPassShaderProgram, "View");
-    var LightingPassCameraPositionUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraPosition")
-    var LightingPassCameraForwardUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraForward")
-    var LightingPassCameraRightUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraRight")
+    var LightingPassViewToWorldUniform = gl.getUniformLocation(LightingPassShaderProgram, "ViewToWorld");
+    var LightingPassWorldToViewUniform = gl.getUniformLocation(LightingPassShaderProgram, "WorldToView")
 
     var TAAPassDepthBufferSampler = gl.getUniformLocation(TAAPassShaderProgram, "DepthBuffer")
     var TAAPassFrameBufferSamplers = gl.getUniformLocation(TAAPassShaderProgram, "Frames")
@@ -158,12 +166,12 @@
 
     // SCENE
     var BoxPositions = [
-         0.0, 0.0,  0.0,
-         2.0, 2.0,  0.0,
-         -2.0, 2.0, 0.0,
-         0.0, 2.0,  -1.95, // z inverted
-         0.0, 4.0,  0.0,
-         0.0, 0.55, 0.0
+         0.0,  -2.0, -8.0,
+         2.0,  0.0,  -8.0,
+         -2.0, 0.0,  -8.0,
+         0.0,  0.0,  -9.95, // z inverted
+         0.0,  2.0,  -8.0,
+         0.0,  -1.45, -8.0
         ]
 
     var BoxSizes = [
@@ -175,7 +183,7 @@
         1.0, 1.0, 1.0,]
 
     // CAMERA
-    var CameraPosition = vec4(0.0, 2.0, 8.0, 1.0)
+    var CameraPosition = vec4(0.0, 0.0, 0.0, 1.0)
     var CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
 
     var CameraRotation = new Float32Array([0.0, 0.0, 0.0])
@@ -190,7 +198,8 @@
     var FOV = 45.0;
 
     var projMatrix = identity();
-    var viewMatrix = identity();
+    var worldToViewMatrix = identity();
+    var viewToWorldMatrix = identity();
     var modelMatrix = identity();
 
     var CameraForward = FORWARD;
@@ -200,14 +209,17 @@
     function ComputeView () {
         projMatrix = perspective(FOV, Near, Far)
 
-        viewMatrix = identity()
-        viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]), viewMatrix)
-        viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
+        worldToViewMatrix = identity()
+        worldToViewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]), worldToViewMatrix)
+        worldToViewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), worldToViewMatrix) 
         
-        var viewMatrixTransposed = (viewMatrix)
-        CameraForward = normalize(multiplyv(FORWARD, viewMatrixTransposed))
-        CameraRight = normalize(multiplyv(RIGHT, viewMatrixTransposed))
-        CameraUp = normalize(multiplyv(UP, viewMatrixTransposed))
+        viewToWorldMatrix = identity()
+        viewToWorldMatrix = multiplym(translate(CameraPosition[0], CameraPosition[1], CameraPosition[2]), viewToWorldMatrix)
+        viewToWorldMatrix = multiplym(rotate(-CameraRotation[0], -CameraRotation[1], -CameraRotation[2]), viewToWorldMatrix)
+
+        CameraForward = normalize(multiplyv(FORWARD, viewToWorldMatrix))
+        CameraRight = normalize(multiplyv(RIGHT, viewToWorldMatrix))
+        CameraUp = normalize(multiplyv(UP, viewToWorldMatrix))
     }
 
     // RENDER PASSES
@@ -218,23 +230,18 @@
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.clear(gl.DEPTH_BUFFER_BIT)
         gl.enable(gl.CULL_FACE);
-        gl.enable(gl.DEPTH_TEST)
-        //gl.depthFunc(gl.GREATER);
         gl.cullFace(gl.BACK);
+        gl.enable(gl.DEPTH_TEST)
         gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1,gl.COLOR_ATTACHMENT2]);
         gl.useProgram(basePassShaderProgram);
         gl.bindVertexArray(triangleGeometryVertexArray);
 
         gl.uniform1f(basePassTimeUniform, frameID);
-
-
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
-
-
-        gl.uniformMatrix4fv(basePassViewMatrixLocation, false, viewMatrix)
+        gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
         
         var LastView = ViewTransforms.pop();
-        ViewTransforms.unshift(multiplym(projMatrix, viewMatrix))
+        ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
 
         for (var i = 0; i < BoxPositions.length * 3; i += 3)
         {
@@ -272,6 +279,18 @@
         gl.bindTexture(gl.TEXTURE_2D, uvBuffer);
         gl.uniform1i(LightingPassUVSampler, 2);
 
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, PerlinNoiseTexture);
+        gl.uniform1i(LightingPassPerlinNoiseSampler, 3);
+
+        gl.activeTexture(gl.TEXTURE4);
+        gl.bindTexture(gl.TEXTURE_2D, WhiteNoiseTexture);
+        gl.uniform1i(LightingPassWhiteNoiseSampler, 4);
+
+        gl.activeTexture(gl.TEXTURE5);
+        gl.bindTexture(gl.TEXTURE_2D, BlueNoiseTexture);
+        gl.uniform1i(LightingPassBlueNoiseSampler, 5);
+
         gl.uniform3fv(LightingPassLightPositionsUniform, LightPositions);
         gl.uniform3fv(LightingPassLightColoursUniform, LightColours);
         gl.uniform1fv(LightingPassLightPowersUniform, LightPowers);
@@ -281,11 +300,8 @@
 
         gl.uniform1f(LightingPassTimeUniform, frameID);
 
-        gl.uniformMatrix4fv(LightingPassViewUniform, false, viewMatrix)
-
-        gl.uniform4fv(LightingPassCameraPositionUniform, CameraPosition)
-        gl.uniform4fv(LightingPassCameraForwardUniform,  CameraForward)
-        gl.uniform4fv(LightingPassCameraRightUniform,    CameraRight)
+        gl.uniformMatrix4fv(LightingPassViewToWorldUniform, false, (viewToWorldMatrix))
+        gl.uniformMatrix4fv(LightingPassWorldToViewUniform, false, (worldToViewMatrix))
 
         gl.bindVertexArray(screenGeometryVertexArray);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -355,7 +371,7 @@
 
         gl.uniform4fv(TAAPassCameraPositionUniform, CameraPosition)
 
-        gl.uniform4fv(TAAPassCameraPositionUniform, multiplyv(FORWARD, viewMatrix))
+        gl.uniform4fv(TAAPassCameraPositionUniform, multiplyv(FORWARD, viewToWorldMatrix))
 
         gl.uniform1f(TAAPassNearUniform, Near);
         gl.uniform1f(TAAPassFarUniform, Far);
@@ -530,7 +546,7 @@
 
         if (event.key == 'r')
         {
-            CameraPosition = vec4(0.0, 2.0, 8.0, 0.0);
+            CameraPosition = vec4(0.0, 0.0, 0.0, 0.0);
             CameraRotation = new Float32Array([0.0, 0.0, 0.0]);
         }
     }

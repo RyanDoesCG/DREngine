@@ -84,8 +84,14 @@ function transpose (matrix)
         matrix[3], matrix[7], matrix[11], matrix[15]]);
 }
 
-function determinent (matrix)
+function determinant (matrix)
 {
+    // It is the product of the elements on the main diagonal 
+    // minus the product of the elements off the main diagonal.
+    // 
+    // | a   b \
+    // |       | = ad - bc
+    // | c   d |
     return 1;
 }
 
