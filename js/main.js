@@ -158,12 +158,12 @@
 
     // SCENE
     var BoxPositions = [
-         0.0, 0.0,  6.0 +  0.0,
-         2.0, 2.0,  6.0 +  0.0,
-         -2.0, 2.0, 6.0 +  0.0,
-         0.0, 2.0,  6.0 +  1.95, // z inverted
-         0.0, 4.0,  6.0 +  0.0,
-         0.0, 0.55, 6.0 +  0.0
+         0.0, 0.0,  0.0,
+         2.0, 2.0,  0.0,
+         -2.0, 2.0, 0.0,
+         0.0, 2.0,  -1.95, // z inverted
+         0.0, 4.0,  0.0,
+         0.0, 0.55, 0.0
         ]
 
     var BoxSizes = [
@@ -175,10 +175,10 @@
         1.0, 1.0, 1.0,]
 
     // CAMERA
-    var CameraPosition = vec4(0.0, 2.0, -8.0, 1.0)
+    var CameraPosition = vec4(0.0, 2.0, 8.0, 1.0)
     var CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
 
-    var CameraRotation = new Float32Array([0.0, Math.PI, 0.0])
+    var CameraRotation = new Float32Array([0.0, 0.0, 0.0])
     var CameraAngularVelocity = new Float32Array([0.0, 0.0, 0.0])
 
     var LastCameraPosition = CameraPosition
@@ -204,7 +204,7 @@
         viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]), viewMatrix)
         viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
         
-        var viewMatrixTransposed = transpose(viewMatrix)
+        var viewMatrixTransposed = (viewMatrix)
         CameraForward = normalize(multiplyv(FORWARD, viewMatrixTransposed))
         CameraRight = normalize(multiplyv(RIGHT, viewMatrixTransposed))
         CameraUp = normalize(multiplyv(UP, viewMatrixTransposed))
@@ -530,8 +530,8 @@
 
         if (event.key == 'r')
         {
-            CameraPosition = vec4(0.0, 2.0, -8.0, 0.0);
-            CameraRotation = new Float32Array([0.0, Math.PI, 0.0, 0.0]);
+            CameraPosition = vec4(0.0, 2.0, 8.0, 0.0);
+            CameraRotation = new Float32Array([0.0, 0.0, 0.0]);
         }
     }
 

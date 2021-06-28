@@ -147,18 +147,12 @@ var LightingPassFragmentShaderFooterSource = `
         return result;
     }
 
-    Ray generateEyeRay ()
+    Ray generateEyeRay (float fov)
     {
-        vec3 CameraUp = cross(CameraForward.xyz, CameraRight.xyz);
+        Ray ray;
 
-        vec2 ViewPlaneUV = (vec2(-1.0, -1.0) + frag_uvs * 2.0);
-        vec3 ViewPlaneYAxis = -CameraUp.xyz;
-        vec3 ViewPlaneXAxis = CameraRight.xyz;
 
-        vec3 ViewPlaneWorldPosition = CameraPosition.xyz + (CameraForward.xyz * 3.0) + (ViewPlaneYAxis * ViewPlaneUV.y) + (ViewPlaneXAxis * ViewPlaneUV.x);     
-        vec3 CameraToViewPlane = ViewPlaneWorldPosition - CameraPosition.xyz;
-
-        return Ray(CameraPosition.xyz, normalize(CameraToViewPlane));
+        return ray;
     }
 
     vec4 lambertian ()
@@ -185,7 +179,7 @@ var LightingPassFragmentShaderFooterSource = `
 
     vec4 raytraced ()
     {
-        Ray ray = generateEyeRay();
+        Ray ray = generateEyeRay(45.0);
 
         Hit result = IntersectScene(ray);
 
