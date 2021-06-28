@@ -37,7 +37,7 @@
     // FRAME BUFFERS
     var albedoBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
-    var uvBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
+    var uvBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
     var depthBuffer  = createDepthTexture(gl, canvas.width, canvas.height)
     var basePassFrameBuffer = createFramebuffer(gl, 
         albedoBuffer, 
@@ -85,6 +85,7 @@
     var LightingPassNormalSampler = gl.getUniformLocation(LightingPassShaderProgram, "NormalBuffer");
     var LightingPassUVSampler     = gl.getUniformLocation(LightingPassShaderProgram, "UVBuffer");
     var LightingPassTimeUniform = gl.getUniformLocation(LightingPassShaderProgram, "Time")
+    var LightingPassCameraPositionUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraPosition")
     var LightingPassViewToWorldUniform = gl.getUniformLocation(LightingPassShaderProgram, "ViewToWorld");
     var LightingPassWorldToViewUniform = gl.getUniformLocation(LightingPassShaderProgram, "WorldToView")
 
@@ -155,7 +156,7 @@
 
     // LIGHTS
     var LightPositions = [
-        0.0, 3.8, 0.0
+        0.0, 1.8, -8.0
     ]
     var LightColours = [
         1.0, 1.0, 1.0,
@@ -232,6 +233,7 @@
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
         gl.enable(gl.DEPTH_TEST)
+        gl.disable(gl.BLEND)
         gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1,gl.COLOR_ATTACHMENT2]);
         gl.useProgram(basePassShaderProgram);
         gl.bindVertexArray(triangleGeometryVertexArray);
@@ -300,6 +302,7 @@
 
         gl.uniform1f(LightingPassTimeUniform, frameID);
 
+        gl.uniform4fv(LightingPassCameraPositionUniform, CameraPosition);
         gl.uniformMatrix4fv(LightingPassViewToWorldUniform, false, (viewToWorldMatrix))
         gl.uniformMatrix4fv(LightingPassWorldToViewUniform, false, (worldToViewMatrix))
 

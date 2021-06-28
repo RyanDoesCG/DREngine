@@ -70,7 +70,7 @@ var basePassFragmentShaderSource =
         if (abs(frag_normal.z) > 0.0) { uv = vec2(frag_worldpos.x, frag_worldpos.y); }
         uv *= 0.32;
 
-        float d =  grid(uv, 0.9);
+        float d =  0.5; // grid(uv, 0.9);
         out_color = vec4(d, d, d, 1.0);
         out_normal = vec4((frag_normal + 1.0) * 0.5, 1.0);
         out_uv = vec4(frag_worldpos, 1.0);

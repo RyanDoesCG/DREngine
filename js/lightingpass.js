@@ -28,6 +28,7 @@ var LightingPassFragmentShaderHeaderSource =
     uniform sampler2D BlueNoise;
 
     uniform float Time;
+    uniform vec4 CameraPosition;
     uniform mat4 ViewToWorld;
     uniform mat4 WorldToView;
 
@@ -167,17 +168,13 @@ var LightingPassFragmentShaderFooterSource = `
         Ray ray;
 
         vec2 ss = frag_uvs;
-
-        ss += vec2(random(-1.0, 1.0), random(-1.0, 1.0)) * 0.001;
-
+        ss = ss + vec2(random(-1.0, 1.0), random(-1.0, 1.0)) * 0.001;
         ss = vec2(-1.0) + ss * 2.0;
-        ss = ss * tan(fov / 2.0 * 180.0 / PI);
+        ss = ss * tan(fov / 2.0 * PI / 180.0);
 
-        mat4 inv = inverse(WorldToView);
-
-        ray.origin    = (WorldToView * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+        ray.origin    = CameraPosition.xyz;
         ray.direction = normalize(vec3(ss.x, ss.y, -1.0) - ray.origin);
-        ray.direction = (WorldToView * vec4(ray.direction, 0.0)).xyz;
+        ray.direction = (ViewToWorld * vec4(ray.direction, 0.0)).xyz;
         ray.direction = normalize(ray.direction);
         return ray;
     }
@@ -192,10 +189,9 @@ var LightingPassFragmentShaderFooterSource = `
         }
         vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
-        LightPositions[0] = vec3( 0.0, 3.8,  0.0);
         for (int i = 0; i < N_LIGHTS; ++i)
         {
-            float h = 0.8;
+            float h = 1.0;
             vec3 L = normalize(LightPositions[i] - WorldPosition.xyz);
             float d = max(dot(L, Normal.xyz), 0.0);
             d = d * h + 1.0 - h;
@@ -206,29 +202,25 @@ var LightingPassFragmentShaderFooterSource = `
 
     vec4 raytraced ()
     {
-        vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
+        vec4 Result = vec4(0.4, 0.4, 0.4, 0.0);
+        Ray ray = generateEyeRay(45.0);
 
-        Ray ray = generateEyeRay(60.0);
-        Hit hit = IntersectScene(ray);
-
-        if (hit.t < 1000.0)
+        vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
+        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
+ 
+        const int N_Samples = 12;
+        for (int i = 0; i < N_Samples; ++i)
         {
-            Result += vec4(0.4, 0.4, 0.4, 0.0);
-
-
-            const int N_Samples = 12;
-            for (int i = 0; i < N_Samples; ++i)
+            Ray BounceRay = Ray(
+                WorldPosition.xyz + Normal.xyz * 0.0001, 
+                normalize((Normal.xyz + randomDirection())));
+            Hit BounceHit = IntersectScene(BounceRay);
+            if (BounceHit.t < 1000.0)
             {
-                Ray BounceRay = Ray(
-                    hit.position + hit.normal * 0.0001, 
-                    normalize((hit.normal + randomDirection())));
-                Hit BounceHit = IntersectScene(BounceRay);
-                if (BounceHit.t < 1000.0)
-                {
-                    Result *= vec4(0.9, 0.9, 0.9, 1.0);
-                }
-            }        
-        }
+                Result *= vec4(0.9, 0.9, 0.9, 1.0);
+            }
+        }        
+        
 
         return Result;
     }
@@ -237,14 +229,7 @@ var LightingPassFragmentShaderFooterSource = `
     {
         vec4 Result;
 
-        //if (frag_uvs.x < 0.5)
-        {
-            Result = lambertian();
-        }
-        //else
-        {
-       //    Result =  raytraced();
-        }
+        Result =  raytraced();
 
         float dithering = (random() / 255.0);
         out_color = (Result / float(N_LIGHTS)) + dithering;
