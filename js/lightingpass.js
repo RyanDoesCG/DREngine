@@ -163,22 +163,6 @@ var LightingPassFragmentShaderFooterSource = `
         return result;
     }
 
-    Ray generateEyeRay (float fov)
-    {
-        Ray ray;
-
-        vec2 ss = frag_uvs;
-        ss = ss + vec2(random(-1.0, 1.0), random(-1.0, 1.0)) * 0.001;
-        ss = vec2(-1.0) + ss * 2.0;
-        ss = ss * tan(fov / 2.0 * PI / 180.0);
-
-        ray.origin    = CameraPosition.xyz;
-        ray.direction = normalize(vec3(ss.x, ss.y, -1.0) - ray.origin);
-        ray.direction = (ViewToWorld * vec4(ray.direction, 0.0)).xyz;
-        ray.direction = normalize(ray.direction);
-        return ray;
-    }
-
     vec4 lambertian ()
     {
         vec4 Result = vec4(0.2, 0.2, 0.2, 1.0);
@@ -202,13 +186,13 @@ var LightingPassFragmentShaderFooterSource = `
 
     vec4 raytraced ()
     {
-        vec4 Result = vec4(0.4, 0.4, 0.4, 0.0);
-        Ray ray = generateEyeRay(45.0);
+      //  vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
+        vec4 Result = vec4(0.5, 0.5, 0.5, 1.0); //Albedo;
 
         vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
  
-        const int N_Samples = 12;
+        const int N_Samples = 16;
         for (int i = 0; i < N_Samples; ++i)
         {
             Ray BounceRay = Ray(
@@ -217,7 +201,7 @@ var LightingPassFragmentShaderFooterSource = `
             Hit BounceHit = IntersectScene(BounceRay);
             if (BounceHit.t < 1000.0)
             {
-                Result *= vec4(0.9, 0.9, 0.9, 1.0);
+                Result *= vec4(0.8, 0.8, 0.8, 1.0);
             }
         }        
         

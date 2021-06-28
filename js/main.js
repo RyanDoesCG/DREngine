@@ -243,7 +243,7 @@
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
         
         var LastView = ViewTransforms.pop();
-        ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
+        ViewTransforms.unshift((worldToViewMatrix))
 
         for (var i = 0; i < BoxPositions.length * 3; i += 3)
         {
@@ -407,9 +407,14 @@
         frameID++;
     }
 
+    var LastLoopEnded = Date.now();
+    var FramerateTickInterval = 60;
+    var DisplayedFrameTime = 0.0;
     var hideUI = false;
     var frameID = 1;
     function Loop () {
+        let TimeSinceLastUpdate = Date.now() - LastLoopEnded;
+
         PollInput();
         DoMovement();
 
@@ -444,7 +449,13 @@
 
         size.innerHTML = "<p>" + canvas.width + " x " + canvas.height + "</p>"
         size.innerHTML += "<p>" + canvas.clientWidth + " x " + canvas.clientHeight + "</p>"
-        
+        size.innerHTML += "<p>" + DisplayedFrameTime + "ms" + "</p>" 
+
+        LastLoopEnded = Date.now();
+        if (frameID % FramerateTickInterval == 0)
+        {
+            DisplayedFrameTime = TimeSinceLastUpdate;
+        }
         requestAnimationFrame(Loop)
     }
 
@@ -462,7 +473,7 @@
     var DownArrowPressed = false;
 
     function PollInput() {
-        var speed = 0.02
+        var speed = 0.01
         var maxVelocity = 1.0
         var minVelocity = 0.01
 
@@ -473,17 +484,8 @@
         if (QPressed) CameraVelocity[1] -= speed
         if (EPressed) CameraVelocity[1] += speed
 
-        if (length(CameraVelocity) > maxVelocity)
-        {
-            CameraVelocity = multiplys(normalize(CameraVelocity), maxVelocity)
-        }
-        
-        if (length(CameraVelocity) < minVelocity)
-        {
-            CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
-        }
 
-        var lookSpeed = 0.005
+        var lookSpeed = 0.0025
         if (LeftArrowPressed)  CameraAngularVelocity[1] -= lookSpeed;
         if (RightArrowPressed) CameraAngularVelocity[1] += lookSpeed;
         if (UpArrowPressed)    CameraAngularVelocity[0] -= lookSpeed;

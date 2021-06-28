@@ -25,7 +25,7 @@ var SharpenPassFragmentShaderSource =
 
     void main() 
     {
-        const float offset = 0.0001;
+        const float offset = 0.000;
 
         vec4 center = texture(FrameBuffer, frag_uvs);
 
