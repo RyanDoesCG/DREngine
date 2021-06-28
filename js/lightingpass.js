@@ -71,9 +71,6 @@ var LightingPassFragmentShaderFooterSource = `
     bool IntersectRaySphereDebug (Ray ray, vec3 SpherePosition)
     {
         float SphereRadius = 1.5;
-
-        SpherePosition.z = -SpherePosition.z;
-
         vec3 oc = ray.origin - SpherePosition;
         float a = dot (ray.direction, ray.direction);
         float b = 2.0 * dot (oc, ray.direction);
@@ -155,13 +152,13 @@ var LightingPassFragmentShaderFooterSource = `
         vec3 CameraUp = cross(CameraForward.xyz, CameraRight.xyz);
 
         vec2 ViewPlaneUV = (vec2(-1.0, -1.0) + frag_uvs * 2.0);
-        vec3 ViewPlaneYAxis = CameraUp.xyz;
+        vec3 ViewPlaneYAxis = -CameraUp.xyz;
         vec3 ViewPlaneXAxis = CameraRight.xyz;
 
-        vec3 ViewPlaneWorldPosition = CameraPosition.xyz + (CameraForward.xyz) + (ViewPlaneYAxis * ViewPlaneUV.y) + (ViewPlaneXAxis * ViewPlaneUV.x);     
+        vec3 ViewPlaneWorldPosition = CameraPosition.xyz + (CameraForward.xyz * 3.0) + (ViewPlaneYAxis * ViewPlaneUV.y) + (ViewPlaneXAxis * ViewPlaneUV.x);     
         vec3 CameraToViewPlane = ViewPlaneWorldPosition - CameraPosition.xyz;
 
-        return Ray(CameraPosition.xyz, (CameraToViewPlane));
+        return Ray(CameraPosition.xyz, normalize(CameraToViewPlane));
     }
 
     vec4 lambertian ()
@@ -225,13 +222,13 @@ var LightingPassFragmentShaderFooterSource = `
         vec4 Result;
 
        // if (frag_uvs.x < 0.5)
-        {
+       // {
             Result = lambertian();
-        }
-      //  else
-        {
-         //  Result =  raytraced();
-        }
+       // }
+       // else
+       // {
+       //    Result =  raytraced();
+       // }
 
         float dithering = (random(frag_uvs) / 255.0);
         out_color = (Result / float(N_LIGHTS)) + dithering;

@@ -7,8 +7,11 @@
 
     var extensions = gl.getSupportedExtensions();
     console.log(extensions)
-
     var ext = gl.getExtension('EXT_color_buffer_float');
+
+    let FORWARD = vec4(0.0, 0.0, -1.0, 0.0);
+    let RIGHT = vec4(1.0, 0.0, 0.0, 0.0);
+    let UP = vec4(0.0, 1.0, 0.0, 0.0);
 
     // SHADERS
     var basePassShaderProgram  = createProgram (gl, 
@@ -155,12 +158,12 @@
 
     // SCENE
     var BoxPositions = [
-         0.0, 0.0, 0.0,
-         2.0, 2.0, 0.0,
-         -2.0, 2.0, 0.0,
-         0.0, 2.0, -1.95, // z inverted
-         0.0, 4.0, 0.0,
-         0.0, 0.55, 0.0
+         0.0, 0.0,  6.0 +  0.0,
+         2.0, 2.0,  6.0 +  0.0,
+         -2.0, 2.0, 6.0 +  0.0,
+         0.0, 2.0,  6.0 +  1.95, // z inverted
+         0.0, 4.0,  6.0 +  0.0,
+         0.0, 0.55, 6.0 +  0.0
         ]
 
     var BoxSizes = [
@@ -175,7 +178,7 @@
     var CameraPosition = vec4(0.0, 2.0, -8.0, 1.0)
     var CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
 
-    var CameraRotation = new Float32Array([0.0, 0.0, 0.0])
+    var CameraRotation = new Float32Array([0.0, Math.PI, 0.0])
     var CameraAngularVelocity = new Float32Array([0.0, 0.0, 0.0])
 
     var LastCameraPosition = CameraPosition
@@ -190,6 +193,23 @@
     var viewMatrix = identity();
     var modelMatrix = identity();
 
+    var CameraForward = FORWARD;
+    var CameraRight = RIGHT;
+    var CameraUp = UP;
+
+    function ComputeView () {
+        projMatrix = perspective(FOV, Near, Far)
+
+        viewMatrix = identity()
+        viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]), viewMatrix)
+        viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
+        
+        var viewMatrixTransposed = transpose(viewMatrix)
+        CameraForward = normalize(multiplyv(FORWARD, viewMatrixTransposed))
+        CameraRight = normalize(multiplyv(RIGHT, viewMatrixTransposed))
+        CameraUp = normalize(multiplyv(UP, viewMatrixTransposed))
+    }
+
     // RENDER PASSES
     function BasePass () {
         gl.viewport(0, 0, canvas.width, canvas.height);
@@ -199,6 +219,7 @@
         gl.clear(gl.DEPTH_BUFFER_BIT)
         gl.enable(gl.CULL_FACE);
         gl.enable(gl.DEPTH_TEST)
+        //gl.depthFunc(gl.GREATER);
         gl.cullFace(gl.BACK);
         gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1,gl.COLOR_ATTACHMENT2]);
         gl.useProgram(basePassShaderProgram);
@@ -206,12 +227,10 @@
 
         gl.uniform1f(basePassTimeUniform, frameID);
 
-        projMatrix = perspective(FOV, Near, Far)
+
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
 
-        viewMatrix = identity()
-        viewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], CameraPosition[2]), viewMatrix)
-        viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), viewMatrix) 
+
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, viewMatrix)
         
         var LastView = ViewTransforms.pop();
@@ -226,10 +245,13 @@
             gl.uniformMatrix4fv(basePassModelMatrixLocation, false, modelMatrix);
             gl.drawArrays(gl.TRIANGLES, 0, triangleGeometryPositions.length / 3);
         }
+
+        //gl.depthFunc(gl.GREATER);
     }
 
     function LightingPass () {
         gl.viewport(0, 0, canvas.width, canvas.height);
+
         var LastBuffer = LightingBuffers.pop();
         LightingBuffers.unshift(LastBuffer);
 
@@ -237,13 +259,6 @@
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, LightingPassFrameBuffer);
         gl.useProgram(LightingPassShaderProgram);
-
- //       if (ViewTransformHasChanged)
- //       {
- //           gl.clearColor(1.0, 1.0, 1.0, 1.0);
- //           gl.clear(gl.COLOR_BUFFER_BIT);
- //           frameID = 1
- //       }
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, albedoBuffer);
@@ -269,8 +284,8 @@
         gl.uniformMatrix4fv(LightingPassViewUniform, false, viewMatrix)
 
         gl.uniform4fv(LightingPassCameraPositionUniform, CameraPosition)
-        gl.uniform4fv(LightingPassCameraForwardUniform,  multiplyv(vec4(0.0, 0.0, 1.0, 0.0), viewMatrix))
-        gl.uniform4fv(LightingPassCameraRightUniform,    multiplyv(vec4(1.0, 0.0, 0.0, 0.0), viewMatrix))
+        gl.uniform4fv(LightingPassCameraForwardUniform,  CameraForward)
+        gl.uniform4fv(LightingPassCameraRightUniform,    CameraRight)
 
         gl.bindVertexArray(screenGeometryVertexArray);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -340,8 +355,7 @@
 
         gl.uniform4fv(TAAPassCameraPositionUniform, CameraPosition)
 
-        var Forward = vec4(0.0, 0.0, 1.0, 0.0)
-        gl.uniform4fv(TAAPassCameraPositionUniform, multiplyv(Forward, viewMatrix))
+        gl.uniform4fv(TAAPassCameraPositionUniform, multiplyv(FORWARD, viewMatrix))
 
         gl.uniform1f(TAAPassNearUniform, Near);
         gl.uniform1f(TAAPassFarUniform, Far);
@@ -382,6 +396,7 @@
 
         if (ImagesLoaded.every(v => v))
         {
+            ComputeView();
             Render();
         }
 
@@ -403,7 +418,6 @@
             CameraPosition[1].toFixed(1) + ", " + 
             CameraPosition[2].toFixed(1) + "</p>"
         
-        var CameraForward = multiplyv(vec4(0.0, 0.0, 1.0, 0.0), viewMatrix)
         ui.innerHTML += "<p>" + 
             CameraForward[0].toFixed(1) + ", " + 
             CameraForward[1].toFixed(1) + ", " + 
@@ -430,17 +444,13 @@
 
     function PollInput() {
         var speed = 0.02
-        var maxVelocity = 0.1
+        var maxVelocity = 1.0
         var minVelocity = 0.01
 
-        var viewMatrix = multiplym(rotate(CameraRotation[0], CameraRotation[1], CameraRotation[2]), identity())
-        var forward = multiplyv(vec4(0.0, 0.0, 1.0, 0.0), viewMatrix) 
-        var right = cross(forward, vec4(0.0, -1.0, 0.0, 0.0))
-
-        if (DPressed) CameraVelocity = addv(CameraVelocity, multiplys(right,  speed))
-        if (APressed) CameraVelocity = addv(CameraVelocity, multiplys(right, -speed))
-        if (WPressed) CameraVelocity = addv(CameraVelocity, multiplys(forward, speed))
-        if (SPressed) CameraVelocity = addv(CameraVelocity, multiplys(forward, -speed))
+        if (DPressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraRight,  speed))
+        if (APressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraRight, -speed))
+        if (WPressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraForward, speed))
+        if (SPressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraForward, -speed))
         if (QPressed) CameraVelocity[1] -= speed
         if (EPressed) CameraVelocity[1] += speed
 
@@ -517,6 +527,12 @@
         {
             hideUI = !hideUI;
         }
+
+        if (event.key == 'r')
+        {
+            CameraPosition = vec4(0.0, 2.0, -8.0, 0.0);
+            CameraRotation = new Float32Array([0.0, Math.PI, 0.0, 0.0]);
+        }
     }
 
     document.addEventListener('keyup', flipkey)
@@ -531,12 +547,9 @@
     {
       for (var i = 0; i < IndividualCookies.length; ++i)
       {
-        if      (IndividualCookies[i].includes("LastCameraX")) 
-            CameraPosition[0] = parseFloat(IndividualCookies[i].split('=')[1]); 
-        else if (IndividualCookies[i].includes("LastCameraY")) 
-            CameraPosition[1] = parseFloat(IndividualCookies[i].split('=')[1]); 
-        else if (IndividualCookies[i].includes("LastCameraZ")) 
-            CameraPosition[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        if      (IndividualCookies[i].includes("LastCameraX")) CameraPosition[0] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraY")) CameraPosition[1] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraZ")) CameraPosition[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
       }
     }
 
@@ -544,12 +557,9 @@
     {
       for (var i = 0; i < IndividualCookies.length; ++i)
       {
-        if      (IndividualCookies[i].includes("LastCameraRotationX")) 
-            CameraRotation[0] = parseFloat(IndividualCookies[i].split('=')[1]); 
-        else if (IndividualCookies[i].includes("LastCameraRotationY")) 
-            CameraRotation[1] = parseFloat(IndividualCookies[i].split('=')[1]); 
-        else if (IndividualCookies[i].includes("LastCameraRotationZ")) 
-            CameraRotation[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        if      (IndividualCookies[i].includes("LastCameraRotationX")) CameraRotation[0] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraRotationY")) CameraRotation[1] = parseFloat(IndividualCookies[i].split('=')[1]); 
+        else if (IndividualCookies[i].includes("LastCameraRotationZ")) CameraRotation[2] = parseFloat(IndividualCookies[i].split('=')[1]); 
       }
     }
     Loop()
