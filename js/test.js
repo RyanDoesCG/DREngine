@@ -1,13 +1,8 @@
 (function (){
-    var a = matrix(
-        2,  3, -4,  34,
-        11, 8,  7,  2,
-        2,  5,  3,  5,
-        6,  6,  2,  4
-    )
+    var a = vec3(0.0, 0.0, 1.0)
+    var b = vec3(0.0, 0.0, 0.0)
+    
 
-    var b = vec4(3, 7, 5, 7)
-
-    var c = multiplyv(b, a)
+    var c = lerp(a, b, 0.25)
     console.log(c)
 })()

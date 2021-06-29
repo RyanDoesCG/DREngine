@@ -69,6 +69,41 @@ var TAAPassFragmentShaderFooterSource = `
         float z = linearDepth(texture(DepthBuffer, frag_uvs).r);
         vec3 p = depthToWorldPosition(z);
 
+        vec4 pl = vec4(p, 1.0);
+        vec2 uv = frag_uvs;
+        Result += texture(Frames[0],  uv);
+
+        pl = View1 * vec4(p, 1.0);
+        //uv = 0.5 * (pl.xy / pl.w) + 0.5;
+        Result += texture(Frames[1],  uv);
+
+        pl = View2 * vec4(p, 1.0);
+        //uv = 0.5 * (pl.xy / pl.w) + 0.5;
+        Result += texture(Frames[2],  uv);
+    
+        pl = View3 * vec4(p, 1.0);
+        //uv = 0.5 * (pl.xy / pl.w) + 0.5;
+        Result += texture(Frames[3],  uv);
+
+        pl = View4 * vec4(p, 1.0);
+        //uv = 0.5 * (pl.xy / pl.w) + 0.5;
+        Result += texture(Frames[4],  uv);
+
+        pl = View5 * vec4(p, 1.0);
+        //uv = 0.5 * (pl.xy / pl.w) + 0.5;
+        Result += texture(Frames[5],  uv);
+
+        out_color = vec4(Result.xyz / 6.0, 1.0);
+    }`
+
+
+
+    /*
+            vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
+
+        float z = linearDepth(texture(DepthBuffer, frag_uvs).r);
+        vec3 p = depthToWorldPosition(z);
+
         vec2 uv = frag_uvs;
         
         //vec4 pl = View0 * vec4(p, 1.0);
@@ -132,4 +167,4 @@ var TAAPassFragmentShaderFooterSource = `
         Result += texture(Frames[14],  uv);
 
         out_color = vec4(Result.xyz / 15.0, 1.0);
-    }`
+     */

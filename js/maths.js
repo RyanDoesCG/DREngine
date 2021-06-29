@@ -9,24 +9,57 @@ function vec4  (x, y, z, w)
     return new Float32Array([ x, y, z, w ]); 
 }
 
+function vec3  (x, y, z) 
+{ 
+    return new Float32Array([ x, y, z ]); 
+}
+
 function dot (lhs, rhs) 
 { 
-    return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2] + lhs[3] * rhs[3]; 
+    if (lhs.length != rhs.length) alert("dot")
+    var N = lhs.length
+    var R = 0.0
+    for (var i = 0; i < N; ++i)
+        R += lhs[i] * rhs[i]
+    return R; 
 }
 
 function addv (lhs, rhs)
 { 
-    return vec4(lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3]); 
+    if (lhs.length != rhs.length)  alert("add")
+    var N = lhs.length
+    var R = []
+    for (var i = 0; i < N; ++i)
+        R.push(lhs[i] + rhs[i])
+    return R; 
+}
+
+function subv (lhs, rhs)
+{ 
+    if (lhs.length != rhs.length)  alert("sub")
+    var N = lhs.length
+    var R = []
+    for (var i = 0; i < N; ++i)
+        R.push(lhs[i] - rhs[i])
+    return R; 
 }
 
 function multiplys (lhs, rhs)
 { 
-    return vec4(lhs[0] * rhs, lhs[1] * rhs, lhs[2] * rhs, lhs[3] * rhs ); 
+    var N = lhs.length
+    var R = []
+    for (var i = 0; i < N; ++i)
+        R.push(lhs[i] * rhs)
+    return R; 
 }
 
 function divides (lhs, rhs) 
 { 
-    return vec4(lhs[0] / rhs, lhs[1] / rhs, lhs[2] / rhs, lhs[3] / rhs) 
+    var N = lhs.length
+    var R = []
+    for (var i = 0; i < N; ++i)
+        R.push(lhs[i] / rhs)
+    return R; 
 }
 
 function cross (lhs, rhs)
@@ -42,6 +75,11 @@ function length (v)
 function normalize (v) 
 { 
     return divides(v, length(v))  
+}
+
+function lerp (a, b, t)
+{
+    return addv(a, multiplys(subv(b, a), t))
 }
 
 /////////////////////////////////////////////////

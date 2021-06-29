@@ -27,7 +27,7 @@ canvas
 {
     width: 100%;
     height: 100%;
-    background: #12121E;
+    background: #646464;
     position: absolute;
     right: 0;
 }
@@ -41,7 +41,7 @@ canvas
 }
 
 #ui p {
-    color: black;
+    color: white;
 }
 
 #notes {
@@ -53,7 +53,7 @@ canvas
 }
 
 #notes p {
-    color: black;
+    color: white;
 }
 
 #size {
@@ -65,6 +65,19 @@ canvas
 }
 
 #size p {
-    color: black;
+    color: white;
     text-align: right;
+}
+
+#loading {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    color:rgba(0.0, 0.0, 0.0, 0.0);
+    width: 100%;
+}
+
+#loading p {
+    color: white;
+    text-align: center;
 }
