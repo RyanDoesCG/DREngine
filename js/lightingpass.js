@@ -39,10 +39,12 @@ var LightingPassFragmentShaderHeaderSource =
 
     #define NUM_BOXES 7
     uniform vec3 BoxPositions[NUM_BOXES];
+    uniform vec3 BoxColours[NUM_BOXES];
     uniform vec3 BoxSizes[NUM_BOXES];
 
     #define NUM_SPHERES 4
     uniform vec3 SpherePositions[NUM_SPHERES];
+    uniform vec3 SphereColours[NUM_SPHERES];
     uniform float SphereSizes[NUM_SPHERES];
 
     in vec2 frag_uvs;
@@ -79,11 +81,13 @@ var LightingPassFragmentShaderFooterSource = `
 
     struct Box {
         vec3 position;
+        vec3 colour;
         vec3 size;
     };
 
     struct Sphere {
         vec3 position;
+        vec3 colour;
         float size;
     };
 
@@ -91,6 +95,7 @@ var LightingPassFragmentShaderFooterSource = `
         float t;
         vec3 position;
         vec3 normal;
+        vec3 colour;
     };
 
     bool IntersectRaySphereDebug (Ray ray, vec3 SpherePosition)
@@ -148,7 +153,8 @@ var LightingPassFragmentShaderFooterSource = `
             return Hit (
                 mint,
                 HitPositionWorldSpace,
-                HitNormal);
+                HitNormal,
+                box.colour);
         }
 
         return last;
@@ -170,7 +176,7 @@ var LightingPassFragmentShaderFooterSource = `
             {
                 vec3 p = ray.origin + ray.direction * t;
                 vec3 n = normalize(p - sphere.position);
-                return Hit(t, p , n);
+                return Hit(t, p , n, sphere.colour);
             }
         }
 
@@ -183,18 +189,21 @@ var LightingPassFragmentShaderFooterSource = `
         Hit result = Hit(
             maxt, 
             ray.origin + ray.direction * maxt,
+            vec3(0.0, 0.0, 0.0), 
             vec3(0.0, 0.0, 0.0));
 
         for (int i = 0; i < NUM_BOXES; ++i)
         {
             result = IntersectRayBox(ray, 
-                Box(BoxPositions[i], 
-                BoxSizes[i]), result);
+                Box(
+                    BoxPositions[i],
+                    BoxColours[i],
+                    BoxSizes[i]), result);
         }
 
         for (int i = 0; i < NUM_SPHERES; ++i)
         {
-            result = IntersectRaySphere(ray, Sphere(SpherePositions[i], SphereSizes[i]), result);
+            result = IntersectRaySphere(ray, Sphere(SpherePositions[i], SphereColours[i], SphereSizes[i]), result);
         }
 
         return result;
@@ -204,10 +213,7 @@ var LightingPassFragmentShaderFooterSource = `
     {
         vec4 Result = vec4(0.2, 0.2, 0.2, 1.0);
         vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
-        if (Albedo.a < 1.0)
-        {
-            return vec4(1.0);
-        }
+
         vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
         for (int i = 0; i < N_LIGHTS; ++i)
@@ -218,20 +224,53 @@ var LightingPassFragmentShaderFooterSource = `
             d = d * h + 1.0 - h;
             Result.xyz += Albedo.xyz * d;
         }
+
+        float dithering = (random() * 0.1);
+        return Result / float(N_LIGHTS) + dithering;
+    }
+
+    vec4 raytraced_diffuse ()
+    {
+        vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
+
+        vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
+        vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
+        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
+ 
+        Result += Albedo;
+
+        if (WorldPosition.w > 0.0)
+        {
+            const int N_Samples = 8;
+            vec3 s = vec3(0.0);
+            for (int i = 0; i < N_Samples; ++i)
+            {
+                Ray BounceRay = Ray(
+                    WorldPosition.xyz + Normal.xyz * 0.0001, 
+                    normalize((Normal.xyz + randomDirection())));
+                Hit BounceHit = IntersectScene(BounceRay);
+                if (BounceHit.t < 1000.0)
+                {
+                    s += BounceHit.colour;
+                    Result *= vec4(0.8, 0.8, 0.8, 1.0);
+                }
+            }
+            Result.xyz += (s / float(N_Samples)) * 0.2;
+        }
+
         return Result;
     }
 
-    vec4 raytraced ()
+    vec4 raytraced_lightingonly ()
     {
-        vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
-        vec4 Result = Albedo;
+        vec4 Result = vec4(0.5, 0.5, 0.5, 1.0);
 
         vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
  
         if (WorldPosition.w > 0.0)
         {
-            const int N_Samples = 8;
+            const int N_Samples = 4;
             for (int i = 0; i < N_Samples; ++i)
             {
                 Ray BounceRay = Ray(
@@ -245,8 +284,6 @@ var LightingPassFragmentShaderFooterSource = `
             }       
         }
  
-        
-
         return Result;
     }
 
@@ -254,13 +291,19 @@ var LightingPassFragmentShaderFooterSource = `
     {
         vec4 Result;
 
-      //  out_color = texture(NormalBuffer, frag_uvs);
-      //  return;
+        //vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
+        //vec4 Normal = vec4(-1.0) + (texture(NormalBuffer, frag_uvs) * 2.0);
+        //vec2 UV = vec2(Albedo.w, Normal.w);
+        //out_color = vec4(Normal.xyz, 1.0);
+        //return;
 
-        Result =  raytraced();
 
-        float dithering = (random() / 255.0);
-        out_color = (Result);// + dithering;
+        {
+            Result = (raytraced_diffuse());
+        }
+
+
+        out_color = Result;
 
         float gamma = 2.2;
         out_color.rgb = pow(out_color.rgb, vec3(1.0/gamma));

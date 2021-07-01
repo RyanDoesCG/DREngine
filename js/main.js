@@ -37,24 +37,28 @@
     // FRAME BUFFERS
     var albedoBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
-    var uvBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
+    var worldposBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
     var depthBuffer  = createDepthTexture(gl, canvas.width, canvas.height)
     var basePassFrameBuffer = createFramebuffer(gl, 
         albedoBuffer, 
         normalBuffer,
-        uvBuffer,
+        worldposBuffer,
         depthBuffer)
 
-    var LightingBuffers = [15]
-    for (var i = 0; i < 15; ++i)
-        LightingBuffers[i] = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
+    let NumHistorySamples = 10;
+    var LightingBuffers = [NumHistorySamples]
+    for (var i = 0; i < NumHistorySamples; ++i)
+        LightingBuffers[i] = createColourTexture(gl, 
+            canvas.width, 
+            canvas.height, 
+            gl.RGBA, gl.UNSIGNED_BYTE)
 
     var AABuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var AAFrameBuffer = createFramebuffer(gl, 
         AABuffer)
 
-    var ViewTransforms = [15]
-    for (var i = 0; i < 15; ++i)
+    var ViewTransforms = [NumHistorySamples]
+    for (var i = 0; i < NumHistorySamples; ++i)
         ViewTransforms[i] = identity()
 
     var LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
@@ -80,9 +84,11 @@
     var LightingPassLightPowersUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPowers")
 
     var LightingPassBoxPositions = gl.getUniformLocation(LightingPassShaderProgram, "BoxPositions")
+    var LightingPassBoxColours = gl.getUniformLocation(LightingPassShaderProgram, "BoxColours")
     var LightingPassBoxSizes = gl.getUniformLocation(LightingPassShaderProgram, "BoxSizes")
 
     var LightingPassSpherePositions = gl.getUniformLocation(LightingPassShaderProgram, "SpherePositions")
+    var LightingPassSphereColours = gl.getUniformLocation(LightingPassShaderProgram, "SphereColours")
     var LightingPassSphereSizes = gl.getUniformLocation(LightingPassShaderProgram, "SphereSizes")
 
     var LightingPassAlbedoSampler = gl.getUniformLocation(LightingPassShaderProgram, "AlbedoBuffer");
@@ -93,6 +99,7 @@
     var LightingPassViewToWorldUniform = gl.getUniformLocation(LightingPassShaderProgram, "ViewToWorld");
     var LightingPassWorldToViewUniform = gl.getUniformLocation(LightingPassShaderProgram, "WorldToView")
 
+    var TAAPassWorldPositionBufferSampler = gl.getUniformLocation(TAAPassShaderProgram, "WorldPositionBuffer")
     var TAAPassDepthBufferSampler = gl.getUniformLocation(TAAPassShaderProgram, "DepthBuffer")
     var TAAPassFrameBufferSamplers = gl.getUniformLocation(TAAPassShaderProgram, "Frames")
 
@@ -106,11 +113,6 @@
     var TAAPassView7Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View7")
     var TAAPassView8Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View8")
     var TAAPassView9Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View9")
-    var TAAPassView10Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View10")
-    var TAAPassView11Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View11")
-    var TAAPassView12Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View12")
-    var TAAPassView13Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View13")
-    var TAAPassView14Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View14")
 
     var TAAPassCameraPositionUniform = gl.getUniformLocation(TAAPassShaderProgram, "CameraPosition")
     var TAAPassCameraForwardUniform = gl.getUniformLocation(TAAPassShaderProgram, "CameraForward")
@@ -198,8 +200,8 @@
 
     var BoxColours = [
         0.5, 0.5, 0.5,
-        0.5, 0.5, 0.5,
-        0.5, 0.5, 0.5,
+        1.0, 0.5, 0.5,
+        0.5, 1.0, 0.5,
         0.5, 0.5, 0.5, 
         0.5, 0.5, 0.5,
 
@@ -226,7 +228,7 @@
 
     var SphereColours = [
         0.5, 0.5, 0.5,
-        0.5, 0.5, 0.5,
+        0.0, 0.0, 0.0,
         0.5, 0.5, 0.5
     ]
 
@@ -295,7 +297,7 @@
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
 
         var LastView = ViewTransforms.pop();
-        ViewTransforms.unshift(worldToViewMatrix)
+        ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
 
         gl.bindVertexArray(boxGeometryVertexArray);
         for (var i = 0; i < BoxPositions.length * 3; i += 3)
@@ -342,7 +344,7 @@
         gl.uniform1i(LightingPassNormalSampler, 1);
 
         gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, uvBuffer);
+        gl.bindTexture(gl.TEXTURE_2D, worldposBuffer);
         gl.uniform1i(LightingPassUVSampler, 2);
 
         gl.activeTexture(gl.TEXTURE3);
@@ -362,9 +364,11 @@
         gl.uniform1fv(LightingPassLightPowersUniform, LightPowers);
 
         gl.uniform3fv(LightingPassBoxPositions, BoxPositions)
+        gl.uniform3fv(LightingPassBoxColours, BoxColours)
         gl.uniform3fv(LightingPassBoxSizes, BoxSizes)
 
         gl.uniform3fv(LightingPassSpherePositions, SpherePositions);
+        gl.uniform3fv(LightingPassSphereColours, SphereColours);
         gl.uniform1fv(LightingPassSphereSizes, SphereSizes);
 
         gl.uniform1f(LightingPassTimeUniform, frameID);
@@ -387,41 +391,32 @@
         gl.useProgram(TAAPassShaderProgram);
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, depthBuffer);
-        gl.uniform1i(TAAPassDepthBufferSampler, 0);
+        gl.bindTexture(gl.TEXTURE_2D, worldposBuffer);
         gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[0]);
+        gl.bindTexture(gl.TEXTURE_2D, depthBuffer);
+
+        gl.uniform1i(TAAPassWorldPositionBufferSampler, 0);
         gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[1]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[0]);
         gl.activeTexture(gl.TEXTURE3);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[2]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[1]);
         gl.activeTexture(gl.TEXTURE4);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[3]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[2]);
         gl.activeTexture(gl.TEXTURE5);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[4]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[3]);
         gl.activeTexture(gl.TEXTURE6);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[5]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[4]);
         gl.activeTexture(gl.TEXTURE7);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[6]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[5]);
         gl.activeTexture(gl.TEXTURE8);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[7]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[6]);
         gl.activeTexture(gl.TEXTURE9);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[8]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[7]);
         gl.activeTexture(gl.TEXTURE10);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[9]);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[8]);
         gl.activeTexture(gl.TEXTURE11);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[10]);
-        gl.activeTexture(gl.TEXTURE12);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[11]);
-        gl.activeTexture(gl.TEXTURE13);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[12]);
-        gl.activeTexture(gl.TEXTURE14);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[13]);
-        gl.activeTexture(gl.TEXTURE15);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[14]);
-        gl.activeTexture(gl.TEXTURE16);
-        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[15]);
-        gl.uniform1iv(TAAPassFrameBufferSamplers, [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ])
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[9])
+        gl.uniform1iv(TAAPassFrameBufferSamplers, [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ])
 
         gl.uniformMatrix4fv(TAAPassView0Uniform,  false, ViewTransforms[0])
         gl.uniformMatrix4fv(TAAPassView1Uniform,  false, ViewTransforms[1])
@@ -433,11 +428,6 @@
         gl.uniformMatrix4fv(TAAPassView7Uniform,  false, ViewTransforms[7])
         gl.uniformMatrix4fv(TAAPassView8Uniform,  false, ViewTransforms[8])
         gl.uniformMatrix4fv(TAAPassView9Uniform,  false, ViewTransforms[9])
-        gl.uniformMatrix4fv(TAAPassView10Uniform, false, ViewTransforms[10])
-        gl.uniformMatrix4fv(TAAPassView11Uniform, false, ViewTransforms[11])
-        gl.uniformMatrix4fv(TAAPassView12Uniform, false, ViewTransforms[12])
-        gl.uniformMatrix4fv(TAAPassView13Uniform, false, ViewTransforms[13])
-        gl.uniformMatrix4fv(TAAPassView14Uniform, false, ViewTransforms[14])
 
         gl.uniform4fv(TAAPassCameraPositionUniform, CameraPosition)
 
@@ -524,7 +514,8 @@
         {
             DisplayedFrameTime = TimeSinceLastUpdate;
         }
-       // requestAnimationFrame(Loop)
+       
+        requestAnimationFrame(Loop)
     }
 
     var APressed = false;
@@ -541,7 +532,7 @@
     var DownArrowPressed = false;
 
     function PollInput() {
-        var speed = 0.01
+        var speed = 0.005
         var maxVelocity = 1.0
         var minVelocity = 0.01
 
@@ -551,7 +542,6 @@
         if (SPressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraForward, -speed))
         if (QPressed) CameraVelocity[1] -= speed
         if (EPressed) CameraVelocity[1] += speed
-
 
         var lookSpeed = 0.00275
         if (LeftArrowPressed)  CameraAngularVelocity[1] -= lookSpeed;
@@ -563,7 +553,17 @@
 
     function DoMovement() {
 
-       // SpherePositions[3] = Math.sin(frameID * 0.1) * 0.1;
+        //SpherePositions[3] = Math.sin(frameID * 0.1) * 0.2;
+
+        var b = Math.sin(frameID * 0.1) + 1.0;
+        BoxColours[3] = Math.sin((frameID + 234) * 0.05452) + 1.0;
+        BoxColours[4] = Math.sin((frameID + 54) * 0.124) + 1.0;;
+        BoxColours[5] = Math.sin((frameID + 294) * 0.06234) + 1.0;;
+
+        b = Math.sin(frameID * 0.1) + 1.0;
+        BoxColours[6] = Math.sin((frameID + 65324) * 0.1) + 1.0;;
+        BoxColours[7] = Math.sin((frameID + 123) * 0.1) + 1.0;;
+        BoxColours[8] = Math.sin((frameID + 1) * 0.1) + 1.0;;
 
         CameraPosition = addv(CameraPosition, CameraVelocity)
         CameraVelocity = multiplys(CameraVelocity, 0.9)
@@ -655,5 +655,6 @@
       }
     }
     
-    setInterval(Loop, 33);
+    Loop();
+    //setInterval(Loop, 16);
 }())

@@ -69,7 +69,6 @@ var sphereGeometryUVs// = new Float32Array([])
 
         for (var i = 0; i < sphereGeometryPositions.length; i += 9)
         {
-            // clockwise
             A = normalize(vec3(sphereGeometryPositions[i + 0], sphereGeometryPositions[i + 1], sphereGeometryPositions[i + 2]))
             B = normalize(vec3(sphereGeometryPositions[i + 3], sphereGeometryPositions[i + 4], sphereGeometryPositions[i + 5]))
             C = normalize(vec3(sphereGeometryPositions[i + 6], sphereGeometryPositions[i + 7], sphereGeometryPositions[i + 8]))
@@ -77,62 +76,25 @@ var sphereGeometryUVs// = new Float32Array([])
             E = normalize(lerp(B, C, 0.5))
             F = normalize(lerp(C, A, 0.5))
  
-            TesselatedBoxPositions.push(...A);
-            TesselatedBoxPositions.push(...D);
-            TesselatedBoxPositions.push(...F);
-            TesselatedBoxPositions.push(...D);
-            TesselatedBoxPositions.push(...B);
-            TesselatedBoxPositions.push(...E);
-            TesselatedBoxPositions.push(...E);
-            TesselatedBoxPositions.push(...C);
-            TesselatedBoxPositions.push(...F);
-            TesselatedBoxPositions.push(...F);
-            TesselatedBoxPositions.push(...D);
-            TesselatedBoxPositions.push(...E);
-            TesselatedBoxNormals.push  (...A);
-            TesselatedBoxNormals.push  (...D);
-            TesselatedBoxNormals.push  (...F);
-            TesselatedBoxNormals.push  (...D);
-            TesselatedBoxNormals.push  (...B);
-            TesselatedBoxNormals.push  (...E);
-            TesselatedBoxNormals.push  (...E);
-            TesselatedBoxNormals.push  (...C);
-            TesselatedBoxNormals.push  (...F);
-            TesselatedBoxNormals.push  (...F);
-            TesselatedBoxNormals.push  (...D);
-            TesselatedBoxNormals.push  (...E);
-    
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
-            TesselatedBoxUVs.push(0.0);
+            TesselatedBoxPositions.push(...A, ...D, ...F, ...D, ...B, ...E, ...E, ...C, ...F, ...F, ...D, ...E);
+            TesselatedBoxNormals.push  (...A, ...D, ...F, ...D, ...B, ...E, ...E, ...C, ...F, ...F, ...D, ...E);
         }
 
-        console.log(TesselatedBoxNormals)
+        for (var i = 0; i < sphereGeometryUVs.length; i += 6)
+        {
+            AUV = vec2(sphereGeometryUVs[i + 0], sphereGeometryUVs[i + 1]);
+            BUV = vec2(sphereGeometryUVs[i + 2], sphereGeometryUVs[i + 3]);
+            CUV = vec2(sphereGeometryUVs[i + 4], sphereGeometryUVs[i + 5]);
+            DUV = lerp(AUV, BUV, 0.5);
+            EUV = lerp(BUV, CUV, 0.5);
+            FUV = lerp(CUV, AUV, 0.5);
+            TesselatedBoxUVs.push  (...AUV, ...DUV, ...FUV, ...DUV, ...BUV, ...EUV, ...EUV, ...CUV, ...FUV, ...FUV, ...DUV, ...EUV);
+        }
+
+        console.log(TesselatedBoxUVs)
 
         sphereGeometryPositions = new Float32Array(TesselatedBoxPositions)
         sphereGeometryNormals = new Float32Array(TesselatedBoxNormals)
-        sphereGeometryUVs = new Float32Array(TesselatedBoxUVs)
-        
+        sphereGeometryUVs = new Float32Array(TesselatedBoxUVs)   
     }
 }())

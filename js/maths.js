@@ -14,6 +14,11 @@ function vec3  (x, y, z)
     return new Float32Array([ x, y, z ]); 
 }
 
+function vec2 (x, y) 
+{ 
+    return new Float32Array([ x, y ]); 
+}
+
 function dot (lhs, rhs) 
 { 
     if (lhs.length != rhs.length) alert("dot")
