@@ -30,14 +30,10 @@
             TAAPassFragmentShaderHeaderSource +
             TAAPassFragmentShaderFooterSource))
 
-    var SharpenPassShaderProram = createProgram(gl, 
-        createShader(gl, gl.VERTEX_SHADER, SharpenPassVertexShaderSource),
-        createShader(gl, gl.FRAGMENT_SHADER, SharpenPassFragmentShaderSource))
-
     // FRAME BUFFERS
     var albedoBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
     var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
-    var worldposBuffer     = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
+    var worldposBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
     var depthBuffer  = createDepthTexture(gl, canvas.width, canvas.height)
     var basePassFrameBuffer = createFramebuffer(gl, 
         albedoBuffer, 
@@ -45,7 +41,7 @@
         worldposBuffer,
         depthBuffer)
 
-    let NumHistorySamples = 10;
+    let NumHistorySamples = 12;
     var LightingBuffers = [NumHistorySamples]
     for (var i = 0; i < NumHistorySamples; ++i)
         LightingBuffers[i] = createColourTexture(gl, 
@@ -122,8 +118,6 @@
     var TAAPassFarUniform = gl.getUniformLocation(TAAPassShaderProgram, "Far")
     var TAAPassTimeUniform = gl.getUniformLocation(TAAPassShaderProgram, "Time")
     
-    var SharpenPassFramebufferSampler = gl.getUniformLocation(SharpenPassShaderProram, "FrameBuffer")
-
     // Screen Pass Geometry Resources
     var screenGeometryVertexArray = gl.createVertexArray();
     gl.bindVertexArray(screenGeometryVertexArray);
@@ -187,55 +181,46 @@
     ]
 
     // SCENE
-    var BoxPositions = [
-         0.0,  -2.0, -8.0,
-         2.0,  0.0,  -8.0,
-         -2.0, 0.0,  -8.0,
-         0.0,  0.0,  -9.95,
-         0.0,  2.0,  -8.0,
+    var BoxPositions = []
 
-         0.0,  -1.45, -8.0,
-        // -0.75,  -1.45, -8.0
-        ]
+    var BoxColours = []
 
-    var BoxColours = [
-        0.5, 0.5, 0.5,
-        1.0, 0.5, 0.5,
-        0.5, 1.0, 0.5,
-        0.5, 0.5, 0.5, 
-        0.5, 0.5, 0.5,
+    var BoxSizes = []
 
-        0.5, 0.5, 0.5,
-        //0.92476, 0.32542, 0.24556
-    ]
+    let GridSize = 30
 
-    var BoxSizes = [
-        3.9, 0.1, 4.0,
-        0.1, 4.1, 4.0,
-        0.1, 4.1, 4.0,
-        4.0, 4.0, 0.1,
-        3.9, 0.1, 4.0,
+    var NBoxes = 0
 
-        1.0, 1.0, 1.0,
-        //1.0, 1.0, 1.0
-    ]
+    for (var x = 0; x <= GridSize; ++x)
+    {
+        for (var z = 0; z <= GridSize; ++z)
+        {
+            let y = Math.floor((-1.0 + (sin(x ) + cos(z ))) * 0.8)
+            BoxPositions.push(
+                -(GridSize * 0.5) + (x), 
+                y, 
+                -(GridSize * 0.5) + z)
+
+                BoxColours.push(0.2, 0.2, 0.2)
+
+
+            BoxSizes.push(1.0, 1.0, 1.0)
+
+            NBoxes += 1;
+        }
+    }
 
     var SpherePositions = [
-        -1.0,  -1.75, -7.0,
-         0.0,  -1.75, -7.0,
-         1.0,  -1.75, -7.0 
+        
+        0.0,  3.0, 0.0
     ]
 
     var SphereColours = [
-        0.5, 0.5, 0.5,
-        0.0, 0.0, 0.0,
-        0.5, 0.5, 0.5
+        80.0, 80.0, 80.0
     ]
 
     var SphereSizes = [
-        0.2,
-        0.2,
-        0.2
+        1.0
     ]
 
     // CAMERA
@@ -250,7 +235,7 @@
     var ViewTransformHasChanged = true;
 
     var Near = 0.01
-    var Far = 50.0
+    var Far = 100.0
     var FOV = 45.0;
 
     var projMatrix = identity();
@@ -300,28 +285,16 @@
         ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
 
         gl.bindVertexArray(boxGeometryVertexArray);
-        for (var i = 0; i < BoxPositions.length * 3; i += 3)
-        {
-            modelMatrix = identity()
-            modelMatrix = multiplym(scale(BoxSizes[i + 0], BoxSizes[i + 1], BoxSizes[i + 2]), modelMatrix)
-            modelMatrix = multiplym(translate(BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2]), modelMatrix)
+        gl.uniform3fv(basePassModelMatrixLocation, BoxPositions);
+        gl.uniform3fv(basePassColorUniform, BoxColours)
+        gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, NBoxes);
 
-            gl.uniformMatrix4fv(basePassModelMatrixLocation, false, modelMatrix);
-            gl.uniform3fv(basePassColorUniform, [ BoxColours[i + 0], BoxColours[i + 1], BoxColours[i + 2] ] )
-            gl.drawArrays(gl.TRIANGLES, 0, boxGeometryPositions.length / 3);
-        }
-
+        /*
         gl.bindVertexArray(sphereGeometryVertexArray);
-        for (var i = 0; i < SpherePositions.length * 3; i += 3)
-        {
-            modelMatrix = identity()
-            modelMatrix = multiplym(scale(SphereSizes[i / 3], SphereSizes[i / 3], SphereSizes[i / 3]), modelMatrix)
-            modelMatrix = multiplym(translate(SpherePositions[i + 0], SpherePositions[i + 1], SpherePositions[i + 2]), modelMatrix)
-
-            gl.uniformMatrix4fv(basePassModelMatrixLocation, false, modelMatrix);
-            gl.uniform3fv(basePassColorUniform, [ SphereColours[i + 0], SphereColours[i + 1], SphereColours[i + 2] ] )
-            gl.drawArrays(gl.TRIANGLES, 0, sphereGeometryPositions.length / 3);
-        }
+        gl.uniform3fv(basePassModelMatrixLocation, SpherePositions);
+        gl.uniform3fv(basePassColorUniform, SphereColours)
+        gl.drawArraysInstanced(gl.TRIANGLES, 0, sphereGeometryPositions.length / 3, 1);
+        */
     }
 
     function LightingPass () {
@@ -363,8 +336,56 @@
         gl.uniform3fv(LightingPassLightColoursUniform, LightColours);
         gl.uniform1fv(LightingPassLightPowersUniform, LightPowers);
 
-        gl.uniform3fv(LightingPassBoxPositions, BoxPositions)
-        gl.uniform3fv(LightingPassBoxColours, BoxColours)
+        var culled = 0;
+
+        LitBoxes = []
+
+        LitBoxPositions = []
+        LitBoxColours = []
+
+        for (var i = 0; i < BoxPositions.length; i += 3)
+        {
+            
+            let position = [BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2]]
+            let fromCamera = normalize(vec2(
+                position[0] - CameraPosition[0],
+                position[2] - CameraPosition[2]))
+
+            let d = 
+                fromCamera[0] * FORWARD[0] +
+                fromCamera[1] * FORWARD[2];
+            
+          //  if (d > 0.9)
+            {
+                LitBoxes.push([
+                    BoxPositions[i + 0], 
+                    BoxPositions[i + 1], 
+                    BoxPositions[i + 2],
+                    BoxColours[i + 0], 
+                    BoxColours[i + 1], 
+                    BoxColours[i + 2]
+                ])
+            }
+        }
+
+        
+        LitBoxes.sort((lhs, rhs) => {
+            let lhsToCamera = [ CameraPosition[0] - lhs[0], CameraPosition[1] - lhs[1], CameraPosition[2] - lhs[2] ]
+            let rhsToCamera = [ CameraPosition[0] - rhs[0], CameraPosition[1] - rhs[1], CameraPosition[2] - rhs[2] ]
+            let lhsDistanceToCamera = lhsToCamera[0] * lhsToCamera[0] + lhsToCamera[1] * lhsToCamera[1] + lhsToCamera[2] * lhsToCamera[2]
+            let rhsDistanceToCamera = rhsToCamera[0] * rhsToCamera[0] + rhsToCamera[1] * rhsToCamera[1] + rhsToCamera[2] * rhsToCamera[2]
+            return lhsDistanceToCamera > rhsDistanceToCamera;
+        })
+        
+        
+        for (var i = 0; i < LitBoxes.length; i += 3)
+        {
+            LitBoxPositions.push(LitBoxes[i][0], LitBoxes[i][1], LitBoxes[i][2])
+            LitBoxColours.push(LitBoxes[i][3], LitBoxes[i][4], LitBoxes[i][5])
+        }
+
+        gl.uniform3fv(LightingPassBoxPositions, LitBoxPositions)
+        gl.uniform3fv(LightingPassBoxColours, LitBoxColours)
         gl.uniform3fv(LightingPassBoxSizes, BoxSizes)
 
         gl.uniform3fv(LightingPassSpherePositions, SpherePositions);
@@ -385,7 +406,7 @@
 
     function TAAPass () {
         gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, AAFrameBuffer);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.useProgram(TAAPassShaderProgram);
@@ -441,26 +462,10 @@
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    function SharpenPass() {
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.clearColor(0, 0, 0, 0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.useProgram(SharpenPassShaderProram);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, AABuffer);
-        gl.uniform1i(SharpenPassFramebufferSampler, 0);
-
-        gl.bindVertexArray(screenGeometryVertexArray);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-
     function Render () {
         BasePass();
         LightingPass();
         TAAPass();
-        SharpenPass();
         frameID++;
     }
 
@@ -505,6 +510,8 @@
             CameraForward[1].toFixed(1) + ", " + 
             CameraForward[2].toFixed(1) + "</p>"
 
+        ui.innerHTML +="<p>" + NBoxes + "</p>";
+
         size.innerHTML = "<p>" + canvas.width + " x " + canvas.height + "</p>"
         size.innerHTML += "<p>" + canvas.clientWidth + " x " + canvas.clientHeight + "</p>"
         size.innerHTML += "<p>" + DisplayedFrameTime + "ms" + "</p>" 
@@ -515,7 +522,7 @@
             DisplayedFrameTime = TimeSinceLastUpdate;
         }
        
-        requestAnimationFrame(Loop)
+       // requestAnimationFrame(Loop)
     }
 
     var APressed = false;
@@ -532,7 +539,7 @@
     var DownArrowPressed = false;
 
     function PollInput() {
-        var speed = 0.005
+        var speed = 0.05
         var maxVelocity = 1.0
         var minVelocity = 0.01
 
@@ -553,8 +560,24 @@
 
     function DoMovement() {
 
-        //SpherePositions[3] = Math.sin(frameID * 0.1) * 0.2;
+              
+        BoxPositions = []
 
+
+        for (var x = 0; x <= GridSize; ++x)
+        {
+            for (var z = 0; z <= GridSize; ++z)
+            {
+                BoxPositions.push(-(GridSize * 0.5) + (x), (-1.0 + (sin(x * 0.5 + frameID.toFixed(2) * 0.05) + cos(z * 0.5 + frameID.toFixed(2) * 0.05))) * 0.6, -(GridSize * 0.5) + z)
+            }
+        }
+        
+    
+
+        SpherePositions[0] = Math.sin(frameID * 0.0025) * 10.0;
+        SpherePositions[2] = Math.cos(frameID * 0.0025) * 10.0;
+
+        /*
         var b = Math.sin(frameID * 0.1) + 1.0;
         BoxColours[3] = Math.sin((frameID + 234) * 0.05452) + 1.0;
         BoxColours[4] = Math.sin((frameID + 54) * 0.124) + 1.0;;
@@ -564,7 +587,7 @@
         BoxColours[6] = Math.sin((frameID + 65324) * 0.1) + 1.0;;
         BoxColours[7] = Math.sin((frameID + 123) * 0.1) + 1.0;;
         BoxColours[8] = Math.sin((frameID + 1) * 0.1) + 1.0;;
-
+        */
         CameraPosition = addv(CameraPosition, CameraVelocity)
         CameraVelocity = multiplys(CameraVelocity, 0.9)
 
@@ -655,6 +678,6 @@
       }
     }
     
-    Loop();
-    //setInterval(Loop, 16);
+   // Loop();
+    setInterval(Loop, 33);
 }())

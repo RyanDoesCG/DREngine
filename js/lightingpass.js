@@ -32,20 +32,17 @@ var LightingPassFragmentShaderHeaderSource =
     uniform mat4 ViewToWorld;
     uniform mat4 WorldToView;
 
-    #define N_LIGHTS 4
-    vec3  LightPositions[N_LIGHTS];
-    vec3  LightColours[N_LIGHTS];
-    float LightPowers[N_LIGHTS];
-
-    #define NUM_BOXES 7
+    #define NUM_BOXES 128
     uniform vec3 BoxPositions[NUM_BOXES];
     uniform vec3 BoxColours[NUM_BOXES];
     uniform vec3 BoxSizes[NUM_BOXES];
 
-    #define NUM_SPHERES 4
+    #define NUM_SPHERES 0
+    #if NUM_SPHERES > 0
     uniform vec3 SpherePositions[NUM_SPHERES];
     uniform vec3 SphereColours[NUM_SPHERES];
     uniform float SphereSizes[NUM_SPHERES];
+    #endif
 
     in vec2 frag_uvs;
 
@@ -201,32 +198,14 @@ var LightingPassFragmentShaderFooterSource = `
                     BoxSizes[i]), result);
         }
 
+        #if NUM_SPHERES > 0
         for (int i = 0; i < NUM_SPHERES; ++i)
         {
             result = IntersectRaySphere(ray, Sphere(SpherePositions[i], SphereColours[i], SphereSizes[i]), result);
         }
+        #endif
 
         return result;
-    }
-
-    vec4 lambertian ()
-    {
-        vec4 Result = vec4(0.2, 0.2, 0.2, 1.0);
-        vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
-
-        vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
-        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
-        for (int i = 0; i < N_LIGHTS; ++i)
-        {
-            float h = 1.0;
-            vec3 L = normalize(LightPositions[i] - WorldPosition.xyz);
-            float d = max(dot(L, Normal.xyz), 0.0);
-            d = d * h + 1.0 - h;
-            Result.xyz += Albedo.xyz * d;
-        }
-
-        float dithering = (random() * 0.1);
-        return Result / float(N_LIGHTS) + dithering;
     }
 
     vec4 raytraced_diffuse ()
@@ -241,7 +220,8 @@ var LightingPassFragmentShaderFooterSource = `
 
         if (WorldPosition.w > 0.0)
         {
-            const int N_Samples = 8;
+            
+            const int N_Samples = 2;
             vec3 s = vec3(0.0);
             for (int i = 0; i < N_Samples; ++i)
             {
@@ -252,38 +232,39 @@ var LightingPassFragmentShaderFooterSource = `
                 if (BounceHit.t < 1000.0)
                 {
                     s += BounceHit.colour;
-                    Result *= vec4(0.8, 0.8, 0.8, 1.0);
+                    Result *= vec4(0.4, 0.4, 0.4, 1.0);
                 }
             }
-            Result.xyz += (s / float(N_Samples)) * 0.2;
+            Result.xyz += (s / float(N_Samples)) * 0.1;
         }
 
         return Result;
     }
 
-    vec4 raytraced_lightingonly ()
+    vec4 raytraced_exp ()
     {
-        vec4 Result = vec4(0.5, 0.5, 0.5, 1.0);
+        vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
 
+        vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
         vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
  
+        Result += Albedo;
+
+        
         if (WorldPosition.w > 0.0)
         {
-            const int N_Samples = 4;
-            for (int i = 0; i < N_Samples; ++i)
+            Ray BounceRay = Ray(
+                WorldPosition.xyz + Normal.xyz * 0.0001, 
+                normalize((Normal.xyz + randomDirection())));
+            Hit BounceHit = IntersectScene(BounceRay);
+            if (BounceHit.t < 1000.0)
             {
-                Ray BounceRay = Ray(
-                    WorldPosition.xyz + Normal.xyz * 0.0001, 
-                    normalize((Normal.xyz + randomDirection())));
-                Hit BounceHit = IntersectScene(BounceRay);
-                if (BounceHit.t < 1000.0)
-                {
-                    Result *= vec4(0.6, 0.6, 0.6, 1.0);
-                }
-            }       
+                Result += vec4(BounceHit.colour.xyz, 0.0) * max(BounceHit.t, 1.0);
+            }
         }
- 
+        
+
         return Result;
     }
 
@@ -291,17 +272,7 @@ var LightingPassFragmentShaderFooterSource = `
     {
         vec4 Result;
 
-        //vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
-        //vec4 Normal = vec4(-1.0) + (texture(NormalBuffer, frag_uvs) * 2.0);
-        //vec2 UV = vec2(Albedo.w, Normal.w);
-        //out_color = vec4(Normal.xyz, 1.0);
-        //return;
-
-
-        {
-            Result = (raytraced_diffuse());
-        }
-
+        Result = (raytraced_diffuse());
 
         out_color = Result;
 

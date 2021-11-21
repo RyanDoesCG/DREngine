@@ -72,14 +72,14 @@ function cross (lhs, rhs)
     return vec4(lhs[1] * rhs[2] - lhs[2] * rhs[1], lhs[2] * rhs[0] - lhs[0] * rhs[2], lhs[0] * rhs[1] - lhs[1] * rhs[0]) 
 }
 
-function length (v)
+function len (v)
 { 
     return Math.sqrt(dot(v, v)) 
 }
 
 function normalize (v) 
 { 
-    return divides(v, length(v))  
+    return divides(v, len(v))  
 }
 
 function lerp (a, b, t)
@@ -218,7 +218,7 @@ function roll (z)
 
 function rotate (x, y, z)
 {
-    return multiplym(multiplym(pitch(x), yaw(y)), roll(z))
+    return multiplym(pitch(x), yaw(y))
 }
 
 function perspective (fov, near, far)
