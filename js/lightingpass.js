@@ -145,7 +145,7 @@ var LightingPassFragmentShaderFooterSource = `
         mint            = max(mint, min(tz1, tz2));
         maxt            = min(maxt, max(tz1, tz2));
 
-        if (maxt >= max(0.0, mint) && mint < last.t)
+        if (maxt >= max(0.0, mint) && mint > 0.01 && mint < last.t)
         {
             vec3 HitPositionWorldSpace = ray.origin + ray.direction * mint;
             vec3 HitPositionLocalSpace = HitPositionWorldSpace - box.position;
@@ -228,8 +228,7 @@ var LightingPassFragmentShaderFooterSource = `
 
         if (WorldPosition.w > 0.0)
         {
-            
-            const int N_Samples = 3;
+            const int N_Samples = 2;
             vec3 s = vec3(0.0);
             for (int i = 0; i < N_Samples; ++i)
             {
@@ -241,10 +240,10 @@ var LightingPassFragmentShaderFooterSource = `
                 if (BounceHit.t < 1000.0)
                 {
                     s += BounceHit.colour;
-                    Result *= vec4(0.4, 0.4, 0.4, 1.0);
+                    Result *= vec4(1.0 - (1.0 / float(N_Samples)));
                 }
             }
-            Result.xyz += (s / float(N_Samples)) * 0.1;
+            Result.xyz += (s / float(N_Samples)) * 0.2;
         }
 
         return Result;

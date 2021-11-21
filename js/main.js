@@ -203,7 +203,16 @@
                 -(GridSize * 0.5) + z)
 
             //BoxColours.push(Math.random(), Math.random(), Math.random())
-            BoxColours.push(0.2, 0.2, 0.2)
+
+            if (Math.random() > 0.97)
+            {
+                BoxColours.push(100.0, 0.2, 100.0)
+            }
+            else
+            {
+                BoxColours.push(0.2, 0.2, 0.2)
+            }
+
 
 
             BoxSizes.push(1.0, 1.0, 1.0)
@@ -544,7 +553,7 @@
             DisplayedFrameTime = TimeSinceLastUpdate;
         }
        
-       // requestAnimationFrame(Loop)
+        requestAnimationFrame(Loop)
     }
 
     var APressed = false;
@@ -591,6 +600,7 @@
                 BoxPositions.push(-(GridSize * 0.5) + (x), (-1.0 + (sin(x * 0.5 + frameID.toFixed(2) * 0.05) + cos(z * 0.5 + frameID.toFixed(2) * 0.05))) * 0.6, -(GridSize * 0.5) + z)
             }
         }
+        
             
         SpherePositions[0] = CameraPosition[0] + (CameraForward[0] * 10.0);
         SpherePositions[1] = CameraPosition[1] + (CameraForward[1] * 10.0);
@@ -697,6 +707,6 @@
       }
     }
     
-   // Loop();
-    setInterval(Loop, 33);
+    Loop();
+   // setInterval(Loop, 33);
 }())
