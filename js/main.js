@@ -190,6 +190,7 @@
     let GridSize = 30
 
     var NBoxes = 0
+    var Culled = 0
 
     for (var x = 0; x <= GridSize; ++x)
     {
@@ -201,7 +202,8 @@
                 y, 
                 -(GridSize * 0.5) + z)
 
-                BoxColours.push(0.2, 0.2, 0.2)
+            //BoxColours.push(Math.random(), Math.random(), Math.random())
+            BoxColours.push(0.2, 0.2, 0.2)
 
 
             BoxSizes.push(1.0, 1.0, 1.0)
@@ -256,7 +258,7 @@
         
         viewToWorldMatrix = identity()
         viewToWorldMatrix = multiplym(translate(CameraPosition[0], CameraPosition[1], CameraPosition[2]), viewToWorldMatrix)
-        viewToWorldMatrix = multiplym(rotate(-CameraRotation[0], -CameraRotation[1], -CameraRotation[2]), viewToWorldMatrix)
+        viewToWorldMatrix = multiplym(rotateRev(-CameraRotation[0], -CameraRotation[1], -CameraRotation[2]), viewToWorldMatrix)
 
         CameraForward = normalize(multiplyv(FORWARD, viewToWorldMatrix))
         CameraRight = normalize(multiplyv(RIGHT, viewToWorldMatrix))
@@ -289,12 +291,12 @@
         gl.uniform3fv(basePassColorUniform, BoxColours)
         gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, NBoxes);
 
-        /*
+/*        
         gl.bindVertexArray(sphereGeometryVertexArray);
         gl.uniform3fv(basePassModelMatrixLocation, SpherePositions);
         gl.uniform3fv(basePassColorUniform, SphereColours)
         gl.drawArraysInstanced(gl.TRIANGLES, 0, sphereGeometryPositions.length / 3, 1);
-        */
+*/  
     }
 
     function LightingPass () {
@@ -336,7 +338,7 @@
         gl.uniform3fv(LightingPassLightColoursUniform, LightColours);
         gl.uniform1fv(LightingPassLightPowersUniform, LightPowers);
 
-        var culled = 0;
+        Culled = 0;
 
         LitBoxes = []
 
@@ -347,15 +349,17 @@
         {
             
             let position = [BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2]]
-            let fromCamera = normalize(vec2(
+            let fromCamera = normalize(vec3(
                 position[0] - CameraPosition[0],
+                position[1] - CameraPosition[1],
                 position[2] - CameraPosition[2]))
 
             let d = 
-                fromCamera[0] * FORWARD[0] +
-                fromCamera[1] * FORWARD[2];
+                fromCamera[0] * CameraForward[0] +
+                fromCamera[1] * CameraForward[1] +
+                fromCamera[2] * CameraForward[2];
             
-          //  if (d > 0.9)
+            if (d > 0.7)
             {
                 LitBoxes.push([
                     BoxPositions[i + 0], 
@@ -366,7 +370,12 @@
                     BoxColours[i + 2]
                 ])
             }
+            else
+            {
+                Culled += 1
+            }
         }
+        
 
         
         LitBoxes.sort((lhs, rhs) => {
@@ -377,12 +386,24 @@
             return lhsDistanceToCamera > rhsDistanceToCamera;
         })
         
+
+        /*
+        LitBoxes.sort((lhs, rhs) => {
+            let lhsToCamera = [ CameraPosition[0] - lhs[0], CameraPosition[1] - lhs[1], CameraPosition[2] - lhs[2] ]
+            let rhsToCamera = [ CameraPosition[0] - rhs[0], CameraPosition[1] - rhs[1], CameraPosition[2] - rhs[2] ]
+            let lhsDistanceToCamera = lhsToCamera[0] * lhsToCamera[0] + lhsToCamera[1] * lhsToCamera[1] + lhsToCamera[2] * lhsToCamera[2]
+            let rhsDistanceToCamera = rhsToCamera[0] * rhsToCamera[0] + rhsToCamera[1] * rhsToCamera[1] + rhsToCamera[2] * rhsToCamera[2]
+            return lhsDistanceToCamera > rhsDistanceToCamera;
+        })
+        */
         
-        for (var i = 0; i < LitBoxes.length; i += 3)
+        
+        for (var i = 0; i < LitBoxes.length; i++)
         {
             LitBoxPositions.push(LitBoxes[i][0], LitBoxes[i][1], LitBoxes[i][2])
             LitBoxColours.push(LitBoxes[i][3], LitBoxes[i][4], LitBoxes[i][5])
         }
+        
 
         gl.uniform3fv(LightingPassBoxPositions, LitBoxPositions)
         gl.uniform3fv(LightingPassBoxColours, LitBoxColours)
@@ -510,7 +531,8 @@
             CameraForward[1].toFixed(1) + ", " + 
             CameraForward[2].toFixed(1) + "</p>"
 
-        ui.innerHTML +="<p>" + NBoxes + "</p>";
+        ui.innerHTML +="<p>" + NBoxes + " boxes in scene </p>";
+        ui.innerHTML +="<p>" + (NBoxes - Culled) + " boxes after cull </p>";
 
         size.innerHTML = "<p>" + canvas.width + " x " + canvas.height + "</p>"
         size.innerHTML += "<p>" + canvas.clientWidth + " x " + canvas.clientHeight + "</p>"
@@ -562,8 +584,6 @@
 
               
         BoxPositions = []
-
-
         for (var x = 0; x <= GridSize; ++x)
         {
             for (var z = 0; z <= GridSize; ++z)
@@ -571,11 +591,10 @@
                 BoxPositions.push(-(GridSize * 0.5) + (x), (-1.0 + (sin(x * 0.5 + frameID.toFixed(2) * 0.05) + cos(z * 0.5 + frameID.toFixed(2) * 0.05))) * 0.6, -(GridSize * 0.5) + z)
             }
         }
-        
-    
-
-        SpherePositions[0] = Math.sin(frameID * 0.0025) * 10.0;
-        SpherePositions[2] = Math.cos(frameID * 0.0025) * 10.0;
+            
+        SpherePositions[0] = CameraPosition[0] + (CameraForward[0] * 10.0);
+        SpherePositions[1] = CameraPosition[1] + (CameraForward[1] * 10.0);
+        SpherePositions[2] = CameraPosition[2] + (CameraForward[2] * 10.0);
 
         /*
         var b = Math.sin(frameID * 0.1) + 1.0;
@@ -592,7 +611,7 @@
         CameraVelocity = multiplys(CameraVelocity, 0.9)
 
         CameraRotation = addv(CameraRotation, CameraAngularVelocity)
-        CameraAngularVelocity = multiplys(CameraAngularVelocity, 0.8)
+        CameraAngularVelocity = multiplys(CameraAngularVelocity, 0.9)
 
         if (Math.abs(CameraPosition[0] - LastCameraPosition[0]) > 0.000 || 
             Math.abs(CameraPosition[1] - LastCameraPosition[1]) > 0.000 || 

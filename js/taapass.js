@@ -48,7 +48,7 @@ var TAAPassFragmentShaderFooterSource = `
     bool shouldRejectSample (vec2 uv)
     {
         bool inRange = uv.x < 1.0 && uv.x > 0.0 && uv.y < 1.0 && uv.y > 0.0;
-        bool farFromCurrentPixel = length(uv - frag_uvs) > 0.5;
+        bool farFromCurrentPixel = length(uv - frag_uvs) > 0.9;
         return !inRange || farFromCurrentPixel;
     }
 
@@ -62,9 +62,12 @@ var TAAPassFragmentShaderFooterSource = `
 
         vec4 pl = position;
         vec2 uv = frag_uvs;
-        Result += texture(Frames[0],  uv);
+        Result += texture(Frames[0],  uv) * 1.0;
         samples += 1.0;
-        
+
+        //out_color = vec4(Result.xyz, 1.0);
+        //return;
+
 
         pl = View1 * position;
         uv = (0.5 * (pl.xy / pl.w) + 0.5);

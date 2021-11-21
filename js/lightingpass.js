@@ -53,8 +53,16 @@ var LightingPassFragmentShaderFooterSource = `
     float seed = 0.0;
     float random ()
     {
-        seed += 0.1;
-        return texture(BlueNoise, vec2(sin(Time * 0.2), cos(Time * 0.2)) + (frag_uvs * 2.0) + vec2(seed)).x;
+        seed += 0.01;
+        return texture(
+            BlueNoise, 
+            vec2(sin(Time * 0.0001), cos(Time * 0.0001)) 
+            
+            + 
+            (frag_uvs * 2.0)+ 
+            vec2(seed)
+            
+            ).x;
     }
 
     float random (float min, float max)
@@ -221,13 +229,14 @@ var LightingPassFragmentShaderFooterSource = `
         if (WorldPosition.w > 0.0)
         {
             
-            const int N_Samples = 2;
+            const int N_Samples = 3;
             vec3 s = vec3(0.0);
             for (int i = 0; i < N_Samples; ++i)
             {
                 Ray BounceRay = Ray(
                     WorldPosition.xyz + Normal.xyz * 0.0001, 
-                    normalize((Normal.xyz + randomDirection())));
+                    normalize(Normal.xyz + randomDirection()));
+
                 Hit BounceHit = IntersectScene(BounceRay);
                 if (BounceHit.t < 1000.0)
                 {
@@ -249,21 +258,8 @@ var LightingPassFragmentShaderFooterSource = `
         vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
  
-        Result += Albedo;
+        Result.xyz += randomDirection().xyz;
 
-        
-        if (WorldPosition.w > 0.0)
-        {
-            Ray BounceRay = Ray(
-                WorldPosition.xyz + Normal.xyz * 0.0001, 
-                normalize((Normal.xyz + randomDirection())));
-            Hit BounceHit = IntersectScene(BounceRay);
-            if (BounceHit.t < 1000.0)
-            {
-                Result += vec4(BounceHit.colour.xyz, 0.0) * max(BounceHit.t, 1.0);
-            }
-        }
-        
 
         return Result;
     }
@@ -275,6 +271,8 @@ var LightingPassFragmentShaderFooterSource = `
         Result = (raytraced_diffuse());
 
         out_color = Result;
+
+        out_color = min(vec4(1.0), max(vec4(0.0), Result));
 
         float gamma = 2.2;
         out_color.rgb = pow(out_color.rgb, vec3(1.0/gamma));

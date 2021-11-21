@@ -221,6 +221,11 @@ function rotate (x, y, z)
     return multiplym(pitch(x), yaw(y))
 }
 
+function rotateRev(x, y, z)
+{
+    return multiplym(yaw(y), pitch(x))
+}
+
 function perspective (fov, near, far)
 {
     var s = 1.0 / Math.tan(fov * 0.5 * Math.PI / 180.0)
