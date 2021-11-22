@@ -118,6 +118,11 @@ function matrix (
     /* col 3 */ a3,  b3,  c3,  d3]);
 }
 
+function access(m, y, x)
+{
+    return m[(y * 4) + x]
+}
+
 function transpose (matrix)
 {
     return new Float32Array([
@@ -270,4 +275,39 @@ function print(matrix)
         matrix[4 ].toString() + " " + matrix[5 ].toString() + " " + matrix[6 ].toString() + " " + matrix[7].toString() +"\n" + 
         matrix[8 ].toString() + " " + matrix[9 ].toString() + " " + matrix[10].toString() + " " + matrix[11].toString() +"\n" +
         matrix[12].toString() + " " + matrix[13].toString() + " " + matrix[14].toString() + " " + matrix[15].toString() +"\n");
+}
+
+function planeOrigin(p)
+{
+    let a = p[0]
+    let b = p[1]
+    let c = p[2]
+    let d = p[3]
+    let l = len([a, b, c])
+    return [
+        (a * d) / l,
+        (b * d) / l,
+        (c * d) / l
+    ]
+}
+
+function planeNormalized(p)
+{
+    let l = len([p[0], p[1], p[2]])
+    return [
+        p[0] / l,
+        p[1] / l,
+        p[2] / l,
+        p[3] / l
+    ]
+}
+
+function halfPlaneTest(plane, p)
+{
+    plane = planeNormalized(plane)
+    return (
+        plane[0] * p[0] + 
+        plane[1] * p[1] + 
+        plane[2] * p[2] + 
+        plane[3]) > 0.0;
 }

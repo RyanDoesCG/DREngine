@@ -6,7 +6,7 @@
     var size = document.getElementById("size")
 
     var extensions = gl.getSupportedExtensions();
-    console.log(extensions)
+  //  console.log(extensions)
     var ext = gl.getExtension('EXT_color_buffer_float');
 
     let FORWARD = vec4(0.0, 0.0, -1.0, 0.0);
@@ -184,115 +184,137 @@
     var BoxPositions = []
     var BoxColours = []
     var BoxSizes = []
-    
-    let GridSize = 30
 
-    var NBoxes = 0
+    var SpherePositions = []
+    var SphereColours = []
+    var SphereSizes = []
+
     var Culled = 0
 
-    for (var x = 0; x <= GridSize; ++x)
+    // once on startup
+    function BuildScene()
     {
-        for (var z = 0; z <= GridSize; ++z)
+        let GridSize = 40
+        var NBoxes = 0
+
+    
+        for (var x = 0; x <= GridSize; ++x)
         {
-            let xPosition = -(GridSize * 0.5) + (x)
-            let zPosition = -(GridSize * 0.5) + z
-
-            let y = (sin(xPosition) + cos(zPosition)) * 0.5//Level1[x][z]
-            BoxPositions.push(
-                xPosition, 
-                y, 
-                zPosition)
-
-            //BoxColours.push(Math.random(), Math.random(), Math.random())
-
-            if (Math.random() > 0.99)
+            for (var z = 0; z <= GridSize; ++z)
             {
-                BoxColours.push(100.0, 0.2, 100.0)
+                let xPosition = -(GridSize * 0.5) + (x)
+                let zPosition = -(GridSize * 0.5) + z
+    
+                let y = -2.0 + (sin(xPosition) + cos(zPosition))
+                //let y = Level1[x][z]
+               // let y = noise(xPosition, zPosition) * 40.0
+                BoxPositions.push(
+                    xPosition, 
+                    y, 
+                    zPosition)
+
+                if (Math.random() > 0.99) BoxColours.push(100.0, 0.2, 100.0)
+                else BoxColours.push(0.2, 0.2, 0.2)
+                BoxSizes.push(1.0, 1.0, 1.0)
+                NBoxes += 1;
+            }
+        }
+    }
+
+    // RASTER SCENE
+    var RasterBoxPositions = []
+    var RasterBoxColours = []
+    var RasterBoxSizes = []
+
+    // once before each frame
+    function BuildRasterScene()
+    {
+        Candidates = []
+        for (var i = 0; i < BoxPositions.length; i += 3)
+        {
+            Candidates.push([
+                BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2],
+                BoxColours[i + 0], BoxColours[i + 1], BoxColours[i + 2],
+                BoxSizes[i + 0], BoxSizes[i + 1], BoxSizes[i + 2],
+            ])
+        }
+
+        RasterBoxPositions = []
+        RasterBoxColours = []
+        RasterBoxSizes = []
+
+        let MAX_RASTER_PRIMITIVES = 961
+        for (var i = 0; i < Candidates.length; ++i)
+        {
+            let position = [Candidates[i][0], Candidates[i][1], Candidates[i][2]]
+            if (!halfPlaneTest(FrustumLeft,   position)) continue;
+            if (!halfPlaneTest(FrustumRight,  position)) continue;
+            if (!halfPlaneTest(FrustumTop,    position)) continue;
+            if (!halfPlaneTest(FrustumBottom, position)) continue;
+            if (!halfPlaneTest(FrustumFront,  position)) continue;
+            if (!halfPlaneTest(FrustumBack,   position)) continue;
+            RasterBoxPositions.push(Candidates[i][0], Candidates[i][1], Candidates[i][2])
+            RasterBoxColours.push(Candidates[i][3], Candidates[i][4], Candidates[i][5])
+            RasterBoxSizes.push(Candidates[i][6], Candidates[i][7], Candidates[i][8])
+            
+        }
+    }
+
+    // RAY TRACING SCENE
+    var RTBoxPositions = []
+    var RTBoxColours = []
+    var RTBoxSizes = []
+
+    function BuildRayTracingScene()
+    {
+        Culled = 0;
+        Candidates = []
+        for (var i = 0; i < BoxPositions.length; i += 3)
+        {
+            let position = [ BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2] ]
+
+            let fromCamera = normalize([
+                position[0] - CameraPosition[0],
+                position[1] - CameraPosition[1],
+                position[2] - CameraPosition[2]])
+
+            let d = 
+                fromCamera[0] * CameraForward[0] + 
+                fromCamera[1] * CameraForward[1] + 
+                fromCamera[2] * CameraForward[2];
+
+            if (d > 0.9)
+            {
+                Candidates.push([
+                    BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2],
+                    BoxColours[i + 0], BoxColours[i + 1], BoxColours[i + 2],
+                    BoxSizes[i + 0], BoxSizes[i + 1], BoxSizes[i + 2],
+                ])
             }
             else
             {
-                BoxColours.push(0.2, 0.2, 0.2)
-            }
-
-
-
-            BoxSizes.push(1.0, 1.0, 1.0)
-
-            NBoxes += 1;
-        }
-    }
-
-    var SpherePositions = [
-        
-        0.0,  3.0, 0.0
-    ]
-
-    var SphereColours = [
-        80.0, 80.0, 80.0
-    ]
-
-    var SphereSizes = [
-        1.0
-    ]
-
-    function GatherVisibleBoxes()
-    {
-        BoxPositions = []
-
-        for (var x = 0; x <= GridSize; ++x)
-        {
-            for (var z = 0; z <= GridSize; ++z)
-            {
-                var Position = [0.0, 0.0, 0.0, 0.0]
-                Position[0] = Math.floor((-(GridSize * 0.5) + (x)))
-                Position[2] = Math.floor((-(GridSize * 0.5) + (z)))
-                Position[1] = ((sin(Position[0] * 0.1) + cos(Position[2] * 0.1)) * 10.0)
-                
-                {
-                    BoxPositions.push(
-                        Position[0], 
-                        Position[1], 
-                        Position[2])
-                }
-            } 
-        }
-
-
-/*
-        for (var x = 0; x <= GridSize; ++x)
-        {
-            for (var z = 0; z <= GridSize; ++z)
-            {
-                var Position = [0.0, 0.0, 0.0, 0.0]
-
-                // start at camera position
-                Position[0] = CameraPosition[0]
-                Position[2] = CameraPosition[2]
-
-                // move along camera right
-                Position[0] += CameraRight[0] * (-(GridSize * 0.5) + (x))
-                Position[2] += CameraRight[2] * (-(GridSize * 0.5) + (x))
-
-                Position[0] += CameraForward[0] * (z)
-                Position[2] += CameraForward[2] * (z)
-
-
-                Position[0] = Math.floor((-(GridSize * 0.5) + (x)))
-                Position[2] = Math.floor(-(GridSize * 0.5) + (-z))
-
-                Position[1] = ((sin(Position[0] * 0.1) + cos(Position[2] * 0.1)) * 10.0)
-
-
-                
-                BoxPositions.push(
-                    Position[0], 
-                    Position[1], 
-                    Position[2])
+                Culled += 1;
             }
         }
-        */
-    }
 
+        Candidates.sort((lhs, rhs) => {
+            let ld = len(subv(vec3(lhs[0], lhs[1], lhs[2]), vec3(CameraPosition[0], CameraPosition[1], CameraPosition[2])))
+            let rd = len(subv(vec3(rhs[0], rhs[1], rhs[2]), vec3(CameraPosition[0], CameraPosition[1], CameraPosition[2])))
+            return ld > rd;
+        });
+
+        RTBoxPositions = []
+        RTBoxColours = []
+        RTBoxSizes = []
+
+        let MAX_RT_PRIMITIVES = 184
+        for (var i = 0; i < Candidates.length && i < MAX_RT_PRIMITIVES; ++i)
+        {
+            RTBoxPositions.push(Candidates[i][0], Candidates[i][1], Candidates[i][2])
+            RTBoxColours.push(Candidates[i][3], Candidates[i][4], Candidates[i][5])
+            RTBoxSizes.push(Candidates[i][6], Candidates[i][7], Candidates[i][8])
+        }
+    }
     
     // CAMERA
     var CameraPosition = vec4(0.0, 0.0, 0.0, 1.0)
@@ -309,10 +331,20 @@
     var Far = 100.0
     var FOV = 45.0;
 
-    var projMatrix = identity();
+    var projMatrix        = identity();
     var worldToViewMatrix = identity();
     var viewToWorldMatrix = identity();
-    var modelMatrix = identity();
+    var modelMatrix       = identity();
+
+    // Need arbitrary point and normal for planes
+    // to half-plane test geometry against
+    //    ax + by + cz + d = 0
+    var FrustumTop    = [ 0.0, 0.0, 0.0, 0.0 ]
+    var FrustumBottom = [ 0.0, 0.0, 0.0, 0.0 ]
+    var FrustumFront  = [ 0.0, 0.0, 0.0, 0.0 ]
+    var FrustumBack   = [ 0.0, 0.0, 0.0, 0.0 ]
+    var FrustumLeft   = [ 0.0, 0.0, 0.0, 0.0 ]
+    var FrustumRight  = [ 0.0, 0.0, 0.0, 0.0 ]
 
     var CameraForward = FORWARD;
     var CameraRight = RIGHT;
@@ -332,6 +364,39 @@
         CameraForward = normalize(multiplyv(FORWARD, viewToWorldMatrix))
         CameraRight = normalize(multiplyv(RIGHT, viewToWorldMatrix))
         CameraUp = normalize(multiplyv(UP, viewToWorldMatrix))
+
+        let viewProj = identity()
+        viewProj = multiplym(projMatrix, worldToViewMatrix)
+        
+        FrustumLeft[0] = access(viewProj, 0, 3) + access(viewProj, 0, 0)
+        FrustumLeft[1] = access(viewProj, 1, 3) + access(viewProj, 1, 0)
+        FrustumLeft[2] = access(viewProj, 2, 3) + access(viewProj, 2, 0)
+        FrustumLeft[3] = access(viewProj, 3, 3) + access(viewProj, 3, 0)
+
+        FrustumRight[0] = access(viewProj, 0, 3) - access(viewProj, 0, 0)
+        FrustumRight[1] = access(viewProj, 1, 3) - access(viewProj, 1, 0)
+        FrustumRight[2] = access(viewProj, 2, 3) - access(viewProj, 2, 0)
+        FrustumRight[3] = access(viewProj, 3, 3) - access(viewProj, 3, 0)
+
+        FrustumTop[0] = access(viewProj, 0, 3) - access(viewProj, 0, 1)
+        FrustumTop[1] = access(viewProj, 1, 3) - access(viewProj, 1, 1)
+        FrustumTop[2] = access(viewProj, 2, 3) - access(viewProj, 2, 1)
+        FrustumTop[3] = access(viewProj, 3, 3) - access(viewProj, 3, 1)
+
+        FrustumBottom[0] = access(viewProj, 0, 3) + access(viewProj, 0, 1)
+        FrustumBottom[1] = access(viewProj, 1, 3) + access(viewProj, 1, 1)
+        FrustumBottom[2] = access(viewProj, 2, 3) + access(viewProj, 2, 1)
+        FrustumBottom[3] = access(viewProj, 3, 3) + access(viewProj, 3, 1)
+
+        FrustumFront[0] = access(viewProj, 0, 3) + access(viewProj, 0, 2)
+        FrustumFront[1] = access(viewProj, 1, 3) + access(viewProj, 1, 2)
+        FrustumFront[2] = access(viewProj, 2, 3) + access(viewProj, 2, 2)
+        FrustumFront[3] = access(viewProj, 3, 3) + access(viewProj, 3, 2)
+
+        FrustumBack[0] = access(viewProj, 0, 3) - access(viewProj, 0, 2)
+        FrustumBack[1] = access(viewProj, 1, 3) - access(viewProj, 1, 2)
+        FrustumBack[2] = access(viewProj, 2, 3) - access(viewProj, 2, 2)
+        FrustumBack[3] = access(viewProj, 3, 3) - access(viewProj, 3, 2)
     }
 
     // RENDER PASSES
@@ -355,10 +420,30 @@
         var LastView = ViewTransforms.pop();
         ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
 
-        gl.bindVertexArray(boxGeometryVertexArray);
-        gl.uniform3fv(basePassModelMatrixLocation, BoxPositions);
-        gl.uniform3fv(basePassColorUniform, BoxColours)
-        gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, NBoxes);
+        var BoxPositionsToRasterize = [...RasterBoxPositions]
+        var BoxColoursToRasterize = [...RasterBoxColours]
+
+        while (BoxPositionsToRasterize.length > 0)
+        {
+            gl.bindVertexArray(boxGeometryVertexArray);
+            gl.uniform3fv(basePassModelMatrixLocation, BoxPositionsToRasterize);
+            gl.uniform3fv(basePassColorUniform, BoxColoursToRasterize)
+            gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, BoxPositionsToRasterize.length / 3);
+
+            BoxPositionsToRasterize.splice(0, 961)
+            BoxColoursToRasterize.splice(0, 961)
+        }
+
+        /*
+
+        if (RasterBoxPositions.length > 0)
+        {
+            gl.bindVertexArray(boxGeometryVertexArray);
+            gl.uniform3fv(basePassModelMatrixLocation, RasterBoxPositions);
+            gl.uniform3fv(basePassColorUniform, BoxColours)
+            gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, RasterBoxPositions.length / 3);
+        }
+        */
 
 /*        
         gl.bindVertexArray(sphereGeometryVertexArray);
@@ -407,66 +492,12 @@
         gl.uniform3fv(LightingPassLightColoursUniform, LightColours);
         gl.uniform1fv(LightingPassLightPowersUniform, LightPowers);
 
-        Culled = 0;
-
-        LitBoxes = []
-
-        LitBoxPositions = []
-        LitBoxColours = []
-
-        for (var i = 0; i < BoxPositions.length; i += 3)
+        if (RTBoxPositions.length > 0)
         {
-            
-            let position = [BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2]]
-            let fromCamera = normalize(vec3(
-                position[0] - CameraPosition[0],
-                position[1] - CameraPosition[1],
-                position[2] - CameraPosition[2]))
-
-            let d = 
-                fromCamera[0] * CameraForward[0] +
-                fromCamera[1] * CameraForward[1] +
-                fromCamera[2] * CameraForward[2];
-            
-            if (d > 0.9)
-            {
-                LitBoxes.push([
-                    BoxPositions[i + 0], 
-                    BoxPositions[i + 1], 
-                    BoxPositions[i + 2],
-                    BoxColours[i + 0], 
-                    BoxColours[i + 1], 
-                    BoxColours[i + 2]
-                ])
-            }
-            else
-            {
-                Culled += 1
-            }
+            gl.uniform3fv(LightingPassBoxPositions, RTBoxPositions)
+            gl.uniform3fv(LightingPassBoxColours, RTBoxColours)
+            gl.uniform3fv(LightingPassBoxSizes, RTBoxSizes)
         }
-        
-        LitBoxes.sort((lhs, rhs) => {
-            let lhsToCamera = [ CameraPosition[0] - lhs[0], CameraPosition[1] - lhs[1], CameraPosition[2] - lhs[2] ]
-            let rhsToCamera = [ CameraPosition[0] - rhs[0], CameraPosition[1] - rhs[1], CameraPosition[2] - rhs[2] ]
-            let lhsDistanceToCamera = lhsToCamera[0] * lhsToCamera[0] + lhsToCamera[1] * lhsToCamera[1] + lhsToCamera[2] * lhsToCamera[2]
-            let rhsDistanceToCamera = rhsToCamera[0] * rhsToCamera[0] + rhsToCamera[1] * rhsToCamera[1] + rhsToCamera[2] * rhsToCamera[2]
-            return lhsDistanceToCamera > rhsDistanceToCamera;
-        })    
-        
-        for (var i = 0; i < LitBoxes.length; i++)
-        {
-            LitBoxPositions.push(LitBoxes[i][0], LitBoxes[i][1], LitBoxes[i][2])
-            LitBoxColours.push(LitBoxes[i][3], LitBoxes[i][4], LitBoxes[i][5])
-        }
-        
-
-        if (LitBoxes.length > 0)
-        {
-            gl.uniform3fv(LightingPassBoxPositions, LitBoxPositions)
-            gl.uniform3fv(LightingPassBoxColours, LitBoxColours)
-        }
-
-        gl.uniform3fv(LightingPassBoxSizes, BoxSizes)
 
         gl.uniform3fv(LightingPassSpherePositions, SpherePositions);
         gl.uniform3fv(LightingPassSphereColours, SphereColours);
@@ -531,9 +562,7 @@
         gl.uniformMatrix4fv(TAAPassView9Uniform,  false, ViewTransforms[9])
 
         gl.uniform4fv(TAAPassCameraPositionUniform, CameraPosition)
-
         gl.uniform4fv(TAAPassCameraForwardUniform, multiplyv(FORWARD, viewToWorldMatrix))
-
         gl.uniform1f(TAAPassNearUniform, Near);
         gl.uniform1f(TAAPassFarUniform, Far);
         gl.uniform1f(TAAPassTimeUniform, frameID);
@@ -554,17 +583,19 @@
     var DisplayedFrameTime = 0.0;
     var hideUI = false;
     var frameID = 1;
+
     function Loop () {
         let TimeSinceLastUpdate = Date.now() - LastLoopEnded;
 
         PollInput();
         DoMovement();
-      //  GatherVisibleBoxes();
 
         if (ImagesLoaded.every(v => v))
         {
             document.getElementById("loading").style.opacity = "0.0"
             ComputeView();
+            BuildRasterScene();
+            BuildRayTracingScene();
             Render();
         }
 
@@ -591,8 +622,11 @@
             CameraForward[1].toFixed(1) + ", " + 
             CameraForward[2].toFixed(1) + "</p>"
 
-        ui.innerHTML +="<p>" + NBoxes + " boxes in scene </p>";
-        ui.innerHTML +="<p>" + (NBoxes - Culled) + " boxes after cull </p>";
+        ui.innerHTML +="<p>" + BoxPositions.length / 3 + " boxes in scene </p>";
+        ui.innerHTML +="<p>" + RasterBoxPositions.length / 3 + " boxes sent to raster </p>";
+        ui.innerHTML +="<p>" + RTBoxPositions.length / 3 + " boxes in ray tracing </p>";
+        ui.innerHTML +="<p>" + Culled + " culled with dot </p>";
+        
 
         size.innerHTML = "<p>" + canvas.width + " x " + canvas.height + "</p>"
         size.innerHTML += "<p>" + canvas.clientWidth + " x " + canvas.clientHeight + "</p>"
@@ -604,7 +638,7 @@
             DisplayedFrameTime = TimeSinceLastUpdate;
         }
        
-       // requestAnimationFrame(Loop)
+        requestAnimationFrame(Loop)
     }
 
     var APressed = false;
@@ -723,7 +757,7 @@
     document.addEventListener('keydown', handleKeyDown);
 
     var CookieRecord = document.cookie;
-    console.log(CookieRecord);
+    //console.log(CookieRecord);
 
     var IndividualCookies = CookieRecord.split(' ');
     if (CookieRecord.includes("LastCameraX"))
@@ -746,6 +780,7 @@
       }
     }
     
-   // Loop();
-    setInterval(Loop, 33);
+    BuildScene()
+    requestAnimationFrame(Loop);
+    //setInterval(Loop, 33);
 }())
