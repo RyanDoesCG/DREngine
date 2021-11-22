@@ -205,9 +205,9 @@
                 let xPosition = -(GridSize * 0.5) + (x)
                 let zPosition = -(GridSize * 0.5) + z
     
-                let y = -2.0 + (sin(xPosition) + cos(zPosition))
-                //let y = Level1[x][z]
-               // let y = noise(xPosition, zPosition) * 40.0
+                let y = -2.0 + (sin(xPosition * 0.53423) + cos(zPosition * 0.32532))
+               // let y = Level1[x][z]
+               //let y = noise(xPosition, zPosition) * 1.0
                 BoxPositions.push(
                     xPosition, 
                     y, 
@@ -256,7 +256,6 @@
             RasterBoxPositions.push(Candidates[i][0], Candidates[i][1], Candidates[i][2])
             RasterBoxColours.push(Candidates[i][3], Candidates[i][4], Candidates[i][5])
             RasterBoxSizes.push(Candidates[i][6], Candidates[i][7], Candidates[i][8])
-            
         }
     }
 
