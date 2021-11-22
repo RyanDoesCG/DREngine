@@ -68,7 +68,6 @@ var TAAPassFragmentShaderFooterSource = `
         //out_color = vec4(Result.xyz, 1.0);
         //return;
 
-
         pl = View1 * position;
         uv = (0.5 * (pl.xy / pl.w) + 0.5);
         if (!shouldRejectSample(uv))

@@ -182,11 +182,9 @@
 
     // SCENE
     var BoxPositions = []
-
     var BoxColours = []
-
     var BoxSizes = []
-
+    
     let GridSize = 30
 
     var NBoxes = 0
@@ -196,15 +194,18 @@
     {
         for (var z = 0; z <= GridSize; ++z)
         {
-            let y = Math.floor((-1.0 + (sin(x ) + cos(z ))) * 0.8)
+            let xPosition = -(GridSize * 0.5) + (x)
+            let zPosition = -(GridSize * 0.5) + z
+
+            let y = (sin(xPosition) + cos(zPosition)) * 0.5//Level1[x][z]
             BoxPositions.push(
-                -(GridSize * 0.5) + (x), 
+                xPosition, 
                 y, 
-                -(GridSize * 0.5) + z)
+                zPosition)
 
             //BoxColours.push(Math.random(), Math.random(), Math.random())
 
-            if (Math.random() > 0.97)
+            if (Math.random() > 0.99)
             {
                 BoxColours.push(100.0, 0.2, 100.0)
             }
@@ -234,6 +235,65 @@
         1.0
     ]
 
+    function GatherVisibleBoxes()
+    {
+        BoxPositions = []
+
+        for (var x = 0; x <= GridSize; ++x)
+        {
+            for (var z = 0; z <= GridSize; ++z)
+            {
+                var Position = [0.0, 0.0, 0.0, 0.0]
+                Position[0] = Math.floor((-(GridSize * 0.5) + (x)))
+                Position[2] = Math.floor((-(GridSize * 0.5) + (z)))
+                Position[1] = ((sin(Position[0] * 0.1) + cos(Position[2] * 0.1)) * 10.0)
+                
+                {
+                    BoxPositions.push(
+                        Position[0], 
+                        Position[1], 
+                        Position[2])
+                }
+            } 
+        }
+
+
+/*
+        for (var x = 0; x <= GridSize; ++x)
+        {
+            for (var z = 0; z <= GridSize; ++z)
+            {
+                var Position = [0.0, 0.0, 0.0, 0.0]
+
+                // start at camera position
+                Position[0] = CameraPosition[0]
+                Position[2] = CameraPosition[2]
+
+                // move along camera right
+                Position[0] += CameraRight[0] * (-(GridSize * 0.5) + (x))
+                Position[2] += CameraRight[2] * (-(GridSize * 0.5) + (x))
+
+                Position[0] += CameraForward[0] * (z)
+                Position[2] += CameraForward[2] * (z)
+
+
+                Position[0] = Math.floor((-(GridSize * 0.5) + (x)))
+                Position[2] = Math.floor(-(GridSize * 0.5) + (-z))
+
+                Position[1] = ((sin(Position[0] * 0.1) + cos(Position[2] * 0.1)) * 10.0)
+
+
+                
+                BoxPositions.push(
+                    Position[0], 
+                    Position[1], 
+                    Position[2])
+            }
+        }
+        */
+    }
+
+    
     // CAMERA
     var CameraPosition = vec4(0.0, 0.0, 0.0, 1.0)
     var CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
@@ -368,7 +428,7 @@
                 fromCamera[1] * CameraForward[1] +
                 fromCamera[2] * CameraForward[2];
             
-            if (d > 0.7)
+            if (d > 0.9)
             {
                 LitBoxes.push([
                     BoxPositions[i + 0], 
@@ -385,27 +445,13 @@
             }
         }
         
-
-        
         LitBoxes.sort((lhs, rhs) => {
             let lhsToCamera = [ CameraPosition[0] - lhs[0], CameraPosition[1] - lhs[1], CameraPosition[2] - lhs[2] ]
             let rhsToCamera = [ CameraPosition[0] - rhs[0], CameraPosition[1] - rhs[1], CameraPosition[2] - rhs[2] ]
             let lhsDistanceToCamera = lhsToCamera[0] * lhsToCamera[0] + lhsToCamera[1] * lhsToCamera[1] + lhsToCamera[2] * lhsToCamera[2]
             let rhsDistanceToCamera = rhsToCamera[0] * rhsToCamera[0] + rhsToCamera[1] * rhsToCamera[1] + rhsToCamera[2] * rhsToCamera[2]
             return lhsDistanceToCamera > rhsDistanceToCamera;
-        })
-        
-
-        /*
-        LitBoxes.sort((lhs, rhs) => {
-            let lhsToCamera = [ CameraPosition[0] - lhs[0], CameraPosition[1] - lhs[1], CameraPosition[2] - lhs[2] ]
-            let rhsToCamera = [ CameraPosition[0] - rhs[0], CameraPosition[1] - rhs[1], CameraPosition[2] - rhs[2] ]
-            let lhsDistanceToCamera = lhsToCamera[0] * lhsToCamera[0] + lhsToCamera[1] * lhsToCamera[1] + lhsToCamera[2] * lhsToCamera[2]
-            let rhsDistanceToCamera = rhsToCamera[0] * rhsToCamera[0] + rhsToCamera[1] * rhsToCamera[1] + rhsToCamera[2] * rhsToCamera[2]
-            return lhsDistanceToCamera > rhsDistanceToCamera;
-        })
-        */
-        
+        })    
         
         for (var i = 0; i < LitBoxes.length; i++)
         {
@@ -414,8 +460,12 @@
         }
         
 
-        gl.uniform3fv(LightingPassBoxPositions, LitBoxPositions)
-        gl.uniform3fv(LightingPassBoxColours, LitBoxColours)
+        if (LitBoxes.length > 0)
+        {
+            gl.uniform3fv(LightingPassBoxPositions, LitBoxPositions)
+            gl.uniform3fv(LightingPassBoxColours, LitBoxColours)
+        }
+
         gl.uniform3fv(LightingPassBoxSizes, BoxSizes)
 
         gl.uniform3fv(LightingPassSpherePositions, SpherePositions);
@@ -509,6 +559,7 @@
 
         PollInput();
         DoMovement();
+      //  GatherVisibleBoxes();
 
         if (ImagesLoaded.every(v => v))
         {
@@ -553,7 +604,7 @@
             DisplayedFrameTime = TimeSinceLastUpdate;
         }
        
-        requestAnimationFrame(Loop)
+       // requestAnimationFrame(Loop)
     }
 
     var APressed = false;
@@ -590,18 +641,6 @@
     }
 
     function DoMovement() {
-
-              
-        BoxPositions = []
-        for (var x = 0; x <= GridSize; ++x)
-        {
-            for (var z = 0; z <= GridSize; ++z)
-            {
-                BoxPositions.push(-(GridSize * 0.5) + (x), (-1.0 + (sin(x * 0.5 + frameID.toFixed(2) * 0.05) + cos(z * 0.5 + frameID.toFixed(2) * 0.05))) * 0.6, -(GridSize * 0.5) + z)
-            }
-        }
-        
-            
         SpherePositions[0] = CameraPosition[0] + (CameraForward[0] * 10.0);
         SpherePositions[1] = CameraPosition[1] + (CameraForward[1] * 10.0);
         SpherePositions[2] = CameraPosition[2] + (CameraForward[2] * 10.0);
@@ -707,6 +746,6 @@
       }
     }
     
-    Loop();
-   // setInterval(Loop, 33);
+   // Loop();
+    setInterval(Loop, 33);
 }())
