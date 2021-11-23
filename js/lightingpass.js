@@ -145,7 +145,7 @@ var LightingPassFragmentShaderFooterSource = `
         mint            = max(mint, min(tz1, tz2));
         maxt            = min(maxt, max(tz1, tz2));
 
-        if (maxt >= max(0.0, mint) && mint > 0.01 && mint < last.t)
+        if (maxt >= max(0.0, mint) && mint < last.t)
         {
             vec3 HitPositionWorldSpace = ray.origin + ray.direction * mint;
             vec3 HitPositionLocalSpace = HitPositionWorldSpace - box.position;

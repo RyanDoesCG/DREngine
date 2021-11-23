@@ -41,7 +41,7 @@
         worldposBuffer,
         depthBuffer)
 
-    let NumHistorySamples = 12;
+    let NumHistorySamples = 15;
     var LightingBuffers = [NumHistorySamples]
     for (var i = 0; i < NumHistorySamples; ++i)
         LightingBuffers[i] = createColourTexture(gl, 
@@ -109,6 +109,11 @@
     var TAAPassView7Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View7")
     var TAAPassView8Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View8")
     var TAAPassView9Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View9")
+    var TAAPassView10Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View10")
+    var TAAPassView11Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View11")
+    var TAAPassView12Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View12")
+    var TAAPassView13Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View13")
+    var TAAPassView14Uniform = gl.getUniformLocation(TAAPassShaderProgram, "View14")
 
     var TAAPassCameraPositionUniform = gl.getUniformLocation(TAAPassShaderProgram, "CameraPosition")
     var TAAPassCameraForwardUniform = gl.getUniformLocation(TAAPassShaderProgram, "CameraForward")
@@ -205,7 +210,7 @@
                 let xPosition = -(GridSize * 0.5) + (x)
                 let zPosition = -(GridSize * 0.5) + z
     
-                let y = -2.0 + (sin(xPosition * 0.53423) + cos(zPosition * 0.32532))
+                let y = (sin(xPosition * 0.53423) + cos(zPosition * 0.32532))
                // let y = Level1[x][z]
                //let y = noise(xPosition, zPosition) * 1.0
                 BoxPositions.push(
@@ -350,6 +355,7 @@
     var CameraUp = UP;
 
     function ComputeView () {
+
         projMatrix = perspective(FOV, Near, Far)
 
         worldToViewMatrix = identity()
@@ -396,6 +402,12 @@
         FrustumBack[1] = access(viewProj, 1, 3) - access(viewProj, 1, 2)
         FrustumBack[2] = access(viewProj, 2, 3) - access(viewProj, 2, 2)
         FrustumBack[3] = access(viewProj, 3, 3) - access(viewProj, 3, 2)
+
+        var LastView = ViewTransforms.pop();
+        ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
+        
+        var LastBuffer = LightingBuffers.pop();
+        LightingBuffers.unshift(LastBuffer);
     }
 
     // RENDER PASSES
@@ -415,9 +427,6 @@
         gl.uniform1f(basePassTimeUniform, frameID);
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
-
-        var LastView = ViewTransforms.pop();
-        ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
 
         var BoxPositionsToRasterize = [...RasterBoxPositions]
         var BoxColoursToRasterize = [...RasterBoxColours]
@@ -454,9 +463,6 @@
 
     function LightingPass () {
         gl.viewport(0, 0, canvas.width, canvas.height);
-
-        var LastBuffer = LightingBuffers.pop();
-        LightingBuffers.unshift(LastBuffer);
 
         LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
 
@@ -547,7 +553,18 @@
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[8]);
         gl.activeTexture(gl.TEXTURE11);
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[9])
-        gl.uniform1iv(TAAPassFrameBufferSamplers, [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ])
+        gl.activeTexture(gl.TEXTURE12);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[10]);
+        gl.activeTexture(gl.TEXTURE13);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[11])
+        gl.activeTexture(gl.TEXTURE14);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[12])
+        gl.activeTexture(gl.TEXTURE15);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[13])
+        gl.activeTexture(gl.TEXTURE16);
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[14])
+        
+        gl.uniform1iv(TAAPassFrameBufferSamplers, [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
 
         gl.uniformMatrix4fv(TAAPassView0Uniform,  false, ViewTransforms[0])
         gl.uniformMatrix4fv(TAAPassView1Uniform,  false, ViewTransforms[1])
@@ -559,6 +576,11 @@
         gl.uniformMatrix4fv(TAAPassView7Uniform,  false, ViewTransforms[7])
         gl.uniformMatrix4fv(TAAPassView8Uniform,  false, ViewTransforms[8])
         gl.uniformMatrix4fv(TAAPassView9Uniform,  false, ViewTransforms[9])
+        gl.uniformMatrix4fv(TAAPassView10Uniform,  false, ViewTransforms[10])
+        gl.uniformMatrix4fv(TAAPassView11Uniform,  false, ViewTransforms[11])
+        gl.uniformMatrix4fv(TAAPassView12Uniform,  false, ViewTransforms[12])
+        gl.uniformMatrix4fv(TAAPassView13Uniform,  false, ViewTransforms[13])
+        gl.uniformMatrix4fv(TAAPassView14Uniform,  false, ViewTransforms[14])
 
         gl.uniform4fv(TAAPassCameraPositionUniform, CameraPosition)
         gl.uniform4fv(TAAPassCameraForwardUniform, multiplyv(FORWARD, viewToWorldMatrix))

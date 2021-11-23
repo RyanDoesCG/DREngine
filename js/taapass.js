@@ -16,7 +16,7 @@ var TAAPassFragmentShaderHeaderSource =
     uniform sampler2D WorldPositionBuffer;
     uniform sampler2D DepthBuffer;
 
-    uniform sampler2D Frames[12];
+    uniform sampler2D Frames[15];
     uniform mat4      View0;
     uniform mat4      View1;
     uniform mat4      View2;
@@ -30,6 +30,8 @@ var TAAPassFragmentShaderHeaderSource =
     uniform mat4      View10;
     uniform mat4      View11;
     uniform mat4      View12;
+    uniform mat4      View13;
+    uniform mat4      View14;
 
     uniform vec4 CameraPosition;
     uniform vec4 CameraForward;
@@ -153,6 +155,30 @@ var TAAPassFragmentShaderFooterSource = `
         if (!shouldRejectSample(uv))
         {
             Result += texture(Frames[11],  uv);
+            samples += 1.0;
+        }
+
+        pl = View12 * position;
+        uv = (0.5 * (pl.xy/ pl.w) + 0.5);
+        if (!shouldRejectSample(uv))
+        {
+            Result += texture(Frames[12],  uv);
+            samples += 1.0;
+        }
+
+        pl = View13 * position;
+        uv = (0.5 * (pl.xy/ pl.w) + 0.5);
+        if (!shouldRejectSample(uv))
+        {
+            Result += texture(Frames[13],  uv);
+            samples += 1.0;
+        }
+
+        pl = View14 * position;
+        uv = (0.5 * (pl.xy/ pl.w) + 0.5);
+        if (!shouldRejectSample(uv))
+        {
+            Result += texture(Frames[14],  uv);
             samples += 1.0;
         }
         
