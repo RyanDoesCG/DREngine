@@ -199,10 +199,8 @@
     // once on startup
     function BuildScene()
     {
-        let GridSize = 40
-        var NBoxes = 0
-
-    
+        let GridSize = 60
+        var NBoxes = 0    
         for (var x = 0; x <= GridSize; ++x)
         {
             for (var z = 0; z <= GridSize; ++z)
@@ -210,7 +208,7 @@
                 let xPosition = -(GridSize * 0.5) + (x)
                 let zPosition = -(GridSize * 0.5) + z
     
-                let y = (sin(xPosition * 0.53423) + cos(zPosition * 0.32532))
+                let y = -10.0 + (sin(xPosition * 0.53423) + cos(zPosition * 0.32532))
                // let y = Level1[x][z]
                //let y = noise(xPosition, zPosition) * 1.0
                 BoxPositions.push(
@@ -224,6 +222,16 @@
                 NBoxes += 1;
             }
         }
+    }
+
+    function UpdateScene()
+    {
+        //for (var i = 0; i < BoxPositions.length; i += 3)
+        //{
+        //   // BoxPositions[i + 0] = Math.floor(BoxPositions[i + 0] + WorldCenterPoint[0])
+        //   // BoxPositions[i + 2] = Math.floor(BoxPositions[i + 2] + WorldCenterPoint[1])
+        //    BoxPositions[i + 1] = -10.0 + Math.floor(sin(Math.floor(BoxPositions[i + 0] + CameraPosition[0]) * 0.53423) + cos(Math.floor(BoxPositions[i + 2] + CameraPosition[2]) * 0.32532))
+        //}
     }
 
     // RASTER SCENE
@@ -311,7 +319,7 @@
         RTBoxColours = []
         RTBoxSizes = []
 
-        let MAX_RT_PRIMITIVES = 184
+        let MAX_RT_PRIMITIVES = 256
         for (var i = 0; i < Candidates.length && i < MAX_RT_PRIMITIVES; ++i)
         {
             RTBoxPositions.push(Candidates[i][0], Candidates[i][1], Candidates[i][2])
@@ -431,6 +439,17 @@
         var BoxPositionsToRasterize = [...RasterBoxPositions]
         var BoxColoursToRasterize = [...RasterBoxColours]
 
+        //for (var i = 0; i < RasterBoxPositions.length; i += 3)
+        //{
+        //    BoxPositionsToRasterize.push(RasterBoxPositions[i + 0] + CameraPosition[0])
+        //    BoxPositionsToRasterize.push(RasterBoxPositions[i + 1])
+        //    BoxPositionsToRasterize.push(RasterBoxPositions[i + 2] + CameraPosition[2])
+//
+        //    BoxColoursToRasterize.push(RasterBoxColours[i + 0])
+        //    BoxColoursToRasterize.push(RasterBoxColours[i + 1])
+        //    BoxColoursToRasterize.push(RasterBoxColours[i + 2])
+        //}
+
         while (BoxPositionsToRasterize.length > 0)
         {
             gl.bindVertexArray(boxGeometryVertexArray);
@@ -441,24 +460,6 @@
             BoxPositionsToRasterize.splice(0, 961)
             BoxColoursToRasterize.splice(0, 961)
         }
-
-        /*
-
-        if (RasterBoxPositions.length > 0)
-        {
-            gl.bindVertexArray(boxGeometryVertexArray);
-            gl.uniform3fv(basePassModelMatrixLocation, RasterBoxPositions);
-            gl.uniform3fv(basePassColorUniform, BoxColours)
-            gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, RasterBoxPositions.length / 3);
-        }
-        */
-
-/*        
-        gl.bindVertexArray(sphereGeometryVertexArray);
-        gl.uniform3fv(basePassModelMatrixLocation, SpherePositions);
-        gl.uniform3fv(basePassColorUniform, SphereColours)
-        gl.drawArraysInstanced(gl.TRIANGLES, 0, sphereGeometryPositions.length / 3, 1);
-*/  
     }
 
     function LightingPass () {
@@ -615,8 +616,11 @@
         {
             document.getElementById("loading").style.opacity = "0.0"
             ComputeView();
+
+            UpdateScene();
             BuildRasterScene();
             BuildRayTracingScene();
+
             Render();
         }
 

@@ -31,7 +31,9 @@ var basePassVertexShaderSource =
         jitter_proj[2][0] = random(vec2(Time, 0.0) * 0.01) * jitter;
         jitter_proj[2][1] = random(vec2(0.0, Time) * 0.01) * jitter;
 
-        gl_Position = jitter_proj * view * vec4(model[gl_InstanceID] + vertex_position, 1.0);
+        frag_worldpos = vec4(model[gl_InstanceID] + vertex_position, 1.0);
+
+        gl_Position = jitter_proj * view * frag_worldpos;
         frag_worldpos = vec4(model[gl_InstanceID] + vertex_position, 1.0);
         frag_normal = (vec4(vertex_normal, 0.0)).xyz;
         frag_uv = vertex_uv;

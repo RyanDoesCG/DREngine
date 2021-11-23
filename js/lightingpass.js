@@ -32,7 +32,7 @@ var LightingPassFragmentShaderHeaderSource =
     uniform mat4 ViewToWorld;
     uniform mat4 WorldToView;
 
-    #define NUM_BOXES 184
+    #define NUM_BOXES 256
     uniform vec3 BoxPositions[NUM_BOXES];
     uniform vec3 BoxColours[NUM_BOXES];
     uniform vec3 BoxSizes[NUM_BOXES];
@@ -56,7 +56,7 @@ var LightingPassFragmentShaderFooterSource = `
         seed += 0.1;
         return texture(
             BlueNoise, 
-            vec2(sin(Time * 0.0001), cos(Time * 0.0001)) 
+            vec2(sin(Time * 0.01), cos(Time * 0.01)) 
             
             + 
             (frag_uvs * 2.0)+ 
@@ -228,7 +228,7 @@ var LightingPassFragmentShaderFooterSource = `
 
         if (WorldPosition.w > 0.0)
         {
-            const int N_Samples = 4;
+            const int N_Samples = 2;
             vec3 s = vec3(0.0);
             for (int i = 0; i < N_Samples; ++i)
             {
@@ -271,7 +271,7 @@ var LightingPassFragmentShaderFooterSource = `
 
         out_color = Result;
 
-        out_color = min(vec4(1.0), max(vec4(0.0), Result));
+        //out_color = min(vec4(1.0), max(vec4(0.0), Result));
 
         float gamma = 2.2;
         out_color.rgb = pow(out_color.rgb, vec3(1.0/gamma));

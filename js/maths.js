@@ -309,5 +309,5 @@ function halfPlaneTest(plane, p)
         plane[0] * p[0] + 
         plane[1] * p[1] + 
         plane[2] * p[2] + 
-        plane[3]) > -0.4;
+        plane[3]) > -0.6;
 }
