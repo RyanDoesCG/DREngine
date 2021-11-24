@@ -5,7 +5,8 @@ var basePassVertexShaderSource =
 
     uniform mat4 proj;
     uniform mat4 view;
-    uniform vec3 model[NUM_BOXES];
+    uniform vec3 translations[NUM_BOXES];
+    uniform vec3 scales[NUM_BOXES];
 
     uniform float Time;
 
@@ -25,16 +26,15 @@ var basePassVertexShaderSource =
 
     void main() 
     {
-        const float jitter = 0.002;
+        const float jitter = 0.001;
 
         mat4 jitter_proj = proj;
         jitter_proj[2][0] = random(vec2(Time, 0.0) * 0.01) * jitter;
         jitter_proj[2][1] = random(vec2(0.0, Time) * 0.01) * jitter;
 
-        frag_worldpos = vec4(model[gl_InstanceID] + vertex_position, 1.0);
+        frag_worldpos = vec4(translations[gl_InstanceID] + scales[gl_InstanceID] * vertex_position, 1.0);
 
         gl_Position = jitter_proj * view * frag_worldpos;
-        frag_worldpos = vec4(model[gl_InstanceID] + vertex_position, 1.0);
         frag_normal = (vec4(vertex_normal, 0.0)).xyz;
         frag_uv = vertex_uv;
         frag_id = gl_InstanceID;
@@ -43,7 +43,7 @@ var basePassVertexShaderSource =
 var basePassFragmentShaderSource = 
     `#version 300 es
 
-    #define NUM_BOXES 961
+    #define NUM_BOXES *MAX_RASTER_PRIMITIVES_PER_BATCH*
 
     precision lowp float;
 

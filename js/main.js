@@ -13,20 +13,21 @@
     let RIGHT = vec4(1.0, 0.0, 0.0, 0.0);
     let UP = vec4(0.0, 1.0, 0.0, 0.0);
 
-    let MAX_RASTER_PRIMITIVES_PER_BATCH = 961
+    let MAX_RASTER_PRIMITIVES_PER_BATCH = 400
     let MAX_RT_PRIMITIVES = 256
 
     // SHADERS
     basePassVertexShaderSource = basePassVertexShaderSource
-        .replace("*MAX_RASTER_PRIMITIVES_PER_BATCH*", MAX_RASTER_PRIMITIVES_PER_BATCH.toString())
+        .replaceAll("*MAX_RASTER_PRIMITIVES_PER_BATCH*", MAX_RASTER_PRIMITIVES_PER_BATCH.toString())
+    basePassFragmentShaderSource = basePassFragmentShaderSource
+        .replaceAll("*MAX_RASTER_PRIMITIVES_PER_BATCH*", MAX_RASTER_PRIMITIVES_PER_BATCH.toString())
     LightingPassFragmentShaderHeaderSource = LightingPassFragmentShaderHeaderSource
-        .replace("*MAX_RT_PRIMITIVES*", MAX_RT_PRIMITIVES.toString())
+        .replaceAll("*MAX_RT_PRIMITIVES*", MAX_RT_PRIMITIVES.toString())
 
     console.log(basePassVertexShaderSource)
     var basePassShaderProgram  = createProgram (gl, 
         createShader  (gl, gl.VERTEX_SHADER,   basePassVertexShaderSource), 
         createShader  (gl, gl.FRAGMENT_SHADER, basePassFragmentShaderSource));
-
 
     var LightingPassShaderProgram  = createProgram (gl, 
         createShader  (gl, gl.VERTEX_SHADER, LightingPassVertexShaderSource), 
@@ -75,7 +76,8 @@
     var BlueNoiseTexture = loadTexture(gl, 'images/noise/blue.png')
 
     // UNIFORMS
-    var basePassModelMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "model")
+    var basePassTranslationLocation = gl.getUniformLocation(basePassShaderProgram, "translations")
+    var basePassScaleLocation = gl.getUniformLocation(basePassShaderProgram, "scales")
     var basePassViewMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "view");
     var basePassProjMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "proj")
     var basePassTimeUniform = gl.getUniformLocation(basePassShaderProgram, "Time")
@@ -210,6 +212,32 @@
     // once on startup
     function BuildScene()
     {
+        /*
+        // Cornell Box for Debugging
+        BoxPositions = [ 
+            0.0, -0.2, 0.0, 
+            0.0, -0.7, 0.0, 
+            -2.0, 1.35, 0.0,  
+            2.0, 1.35, 0.0,  
+            0.0, 1.3, -2.0,  
+            0.0, 3.4, 0.0 ]
+        BoxColours = [ 
+            0.32, 0.32, 0.32, 
+            0.32, 0.32, 0.32, 
+            1.0, 0.0, 0.0, 
+            0.0, 1.0, 0.0, 
+            0.32, 0.32, 0.32, 
+            0.32, 0.32, 0.32 ]
+        BoxSizes = [ 
+            1.0, 1.0, 1.0, 
+            4.1, 0.1, 4.0, 
+            0.1, 4.0, 4.0, 
+            0.1, 4.0, 4.0, 
+            4.1, 4.1, 0.1, 
+            4.1, 0.1, 4.0 ]
+        */
+
+        
         let GridSize = 60
         var NBoxes = 0    
         for (var x = 0; x <= GridSize; ++x)
@@ -446,7 +474,8 @@
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
 
         var BoxPositionsToRasterize = [...RasterBoxPositions]
-        var BoxColoursToRasterize = [...RasterBoxColours]
+        var BoxSizesToRasterize     = [...RasterBoxSizes]
+        var BoxColoursToRasterize   = [...RasterBoxColours]
 
         //for (var i = 0; i < RasterBoxPositions.length; i += 3)
         //{
@@ -462,7 +491,8 @@
         while (BoxPositionsToRasterize.length > 0)
         {
             gl.bindVertexArray(boxGeometryVertexArray);
-            gl.uniform3fv(basePassModelMatrixLocation, BoxPositionsToRasterize);
+            gl.uniform3fv(basePassTranslationLocation, BoxPositionsToRasterize);
+            gl.uniform3fv(basePassScaleLocation, BoxSizesToRasterize);
             gl.uniform3fv(basePassColorUniform, BoxColoursToRasterize)
             gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, BoxPositionsToRasterize.length / 3);
 
@@ -611,7 +641,7 @@
     }
 
     var LastLoopEnded = Date.now();
-    var FramerateTickInterval = 60;
+    var FramerateTickInterval = 10;
     var DisplayedFrameTime = 0.0;
     var hideUI = false;
     var frameID = 1;
