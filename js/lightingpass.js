@@ -54,7 +54,7 @@ var LightingPassFragmentShaderFooterSource = `
     float seed = 0.0;
     float random ()
     {
-        seed += 0.1;
+        seed += 0.01;
         return texture(
             BlueNoise, 
             vec2(sin(Time * 1.0), cos(Time * 1.0)) 

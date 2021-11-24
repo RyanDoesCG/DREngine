@@ -312,7 +312,7 @@ function planeNormalized(p)
     ]
 }
 
-function halfPlaneTest(plane, p)
+function halfPlaneTest(plane, p, s)
 {
     plane = planeNormalized(plane)
     return (

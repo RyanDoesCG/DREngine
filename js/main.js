@@ -295,12 +295,13 @@
         for (var i = 0; i < Candidates.length; ++i)
         {
             let position = [Candidates[i][0], Candidates[i][1], Candidates[i][2]]
-            if (!halfPlaneTest(FrustumLeft,   position)) continue;
-            if (!halfPlaneTest(FrustumRight,  position)) continue;
-            if (!halfPlaneTest(FrustumTop,    position)) continue;
-            if (!halfPlaneTest(FrustumBottom, position)) continue;
-            if (!halfPlaneTest(FrustumFront,  position)) continue;
-            if (!halfPlaneTest(FrustumBack,   position)) continue;
+            let bounds = len([Candidates[i][6], Candidates[i][7], Candidates[i][8]])
+            if (!halfPlaneTest(FrustumLeft,   position, bounds)) continue;
+            if (!halfPlaneTest(FrustumRight,  position, bounds)) continue;
+            if (!halfPlaneTest(FrustumTop,    position, bounds)) continue;
+            if (!halfPlaneTest(FrustumBottom, position, bounds)) continue;
+            if (!halfPlaneTest(FrustumFront,  position, bounds)) continue;
+            if (!halfPlaneTest(FrustumBack,   position, bounds)) continue;
             RasterBoxPositions.push(Candidates[i][0], Candidates[i][1], Candidates[i][2])
             RasterBoxColours.push(Candidates[i][3], Candidates[i][4], Candidates[i][5])
             RasterBoxSizes.push(Candidates[i][6], Candidates[i][7], Candidates[i][8])
@@ -330,18 +331,20 @@
                 fromCamera[1] * CameraForward[1] + 
                 fromCamera[2] * CameraForward[2];
 
-            if (d > 0.9)
+            if ((BoxPositions.length / 3) > MAX_RT_PRIMITIVES)
             {
-                Candidates.push([
-                    BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2],
-                    BoxColours[i + 0], BoxColours[i + 1], BoxColours[i + 2],
-                    BoxSizes[i + 0], BoxSizes[i + 1], BoxSizes[i + 2],
-                ])
+                if (d < 0.9)
+                {
+                    Culled += 1;
+                    continue;
+                }
             }
-            else
-            {
-                Culled += 1;
-            }
+  
+            Candidates.push([
+                BoxPositions[i + 0], BoxPositions[i + 1], BoxPositions[i + 2],
+                BoxColours[i + 0], BoxColours[i + 1], BoxColours[i + 2],
+                BoxSizes[i + 0], BoxSizes[i + 1], BoxSizes[i + 2],
+            ])
         }
 
         Candidates.sort((lhs, rhs) => {
@@ -468,7 +471,7 @@
     {
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.bindFramebuffer(gl.FRAMEBUFFER, basePassFrameBuffer);
-        gl.clearColor(0.25, 0.25, 0.25, 0.0);
+        gl.clearColor(0.01, 0.01, 0.01, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.clear(gl.DEPTH_BUFFER_BIT)
         gl.enable(gl.CULL_FACE);
@@ -636,15 +639,16 @@
         frameID++;
     }
 
-    var LastLoopEnded = Date.now();
+    var then = 0
     var FramerateTickInterval = 10;
     var DisplayedFrameTime = 0.0;
     var hideUI = false;
     var frameID = 1;
 
-    function Loop () 
+    function Loop (now) 
     {
-        let TimeSinceLastUpdate = Date.now() - LastLoopEnded;
+        let TimeSinceLastUpdate = now - then;
+        then = now
 
         PollInput();
         DoMovement();
