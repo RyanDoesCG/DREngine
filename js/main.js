@@ -6,17 +6,27 @@
     var size = document.getElementById("size")
 
     var extensions = gl.getSupportedExtensions();
-  //  console.log(extensions)
+    console.log(extensions)
     var ext = gl.getExtension('EXT_color_buffer_float');
 
     let FORWARD = vec4(0.0, 0.0, -1.0, 0.0);
     let RIGHT = vec4(1.0, 0.0, 0.0, 0.0);
     let UP = vec4(0.0, 1.0, 0.0, 0.0);
 
+    let MAX_RASTER_PRIMITIVES_PER_BATCH = 961
+    let MAX_RT_PRIMITIVES = 256
+
     // SHADERS
+    basePassVertexShaderSource = basePassVertexShaderSource
+        .replace("*MAX_RASTER_PRIMITIVES_PER_BATCH*", MAX_RASTER_PRIMITIVES_PER_BATCH.toString())
+    LightingPassFragmentShaderHeaderSource = LightingPassFragmentShaderHeaderSource
+        .replace("*MAX_RT_PRIMITIVES*", MAX_RT_PRIMITIVES.toString())
+
+    console.log(basePassVertexShaderSource)
     var basePassShaderProgram  = createProgram (gl, 
         createShader  (gl, gl.VERTEX_SHADER,   basePassVertexShaderSource), 
         createShader  (gl, gl.FRAGMENT_SHADER, basePassFragmentShaderSource));
+
 
     var LightingPassShaderProgram  = createProgram (gl, 
         createShader  (gl, gl.VERTEX_SHADER, LightingPassVertexShaderSource), 
@@ -257,7 +267,6 @@
         RasterBoxColours = []
         RasterBoxSizes = []
 
-        let MAX_RASTER_PRIMITIVES = 961
         for (var i = 0; i < Candidates.length; ++i)
         {
             let position = [Candidates[i][0], Candidates[i][1], Candidates[i][2]]
@@ -320,7 +329,6 @@
         RTBoxColours = []
         RTBoxSizes = []
 
-        let MAX_RT_PRIMITIVES = 256
         for (var i = 0; i < Candidates.length && i < MAX_RT_PRIMITIVES; ++i)
         {
             RTBoxPositions.push(Candidates[i][0], Candidates[i][1], Candidates[i][2])
@@ -458,8 +466,8 @@
             gl.uniform3fv(basePassColorUniform, BoxColoursToRasterize)
             gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, BoxPositionsToRasterize.length / 3);
 
-            BoxPositionsToRasterize.splice(0, 961)
-            BoxColoursToRasterize.splice(0, 961)
+            BoxPositionsToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
+            BoxColoursToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
         }
     }
 

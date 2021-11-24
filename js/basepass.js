@@ -1,7 +1,7 @@
 var basePassVertexShaderSource = 
     `#version 300 es
 
-    #define NUM_BOXES 961
+    #define NUM_BOXES *MAX_RASTER_PRIMITIVES_PER_BATCH*
 
     uniform mat4 proj;
     uniform mat4 view;

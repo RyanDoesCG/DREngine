@@ -32,7 +32,7 @@ var LightingPassFragmentShaderHeaderSource =
     uniform mat4 ViewToWorld;
     uniform mat4 WorldToView;
     
-    #define NUM_BOXES 256
+    #define NUM_BOXES *MAX_RT_PRIMITIVES*
     uniform int NBoxesThisFrame;
     uniform vec3 BoxPositions[NUM_BOXES];
     uniform vec3 BoxColours[NUM_BOXES];
