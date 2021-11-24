@@ -79,6 +79,7 @@
     var LightingPassLightColoursUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightColours")
     var LightingPassLightPowersUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPowers")
 
+    var LightingPassNBoxesThisFrameUniform = gl.getUniformLocation(LightingPassShaderProgram, "NBoxesThisFrame")
     var LightingPassBoxPositions = gl.getUniformLocation(LightingPassShaderProgram, "BoxPositions")
     var LightingPassBoxColours = gl.getUniformLocation(LightingPassShaderProgram, "BoxColours")
     var LightingPassBoxSizes = gl.getUniformLocation(LightingPassShaderProgram, "BoxSizes")
@@ -500,6 +501,7 @@
 
         if (RTBoxPositions.length > 0)
         {
+            gl.uniform1i(LightingPassNBoxesThisFrameUniform, RTBoxPositions.length)
             gl.uniform3fv(LightingPassBoxPositions, RTBoxPositions)
             gl.uniform3fv(LightingPassBoxColours, RTBoxColours)
             gl.uniform3fv(LightingPassBoxSizes, RTBoxSizes)

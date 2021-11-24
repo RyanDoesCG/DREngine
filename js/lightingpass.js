@@ -31,8 +31,9 @@ var LightingPassFragmentShaderHeaderSource =
     uniform vec4 CameraPosition;
     uniform mat4 ViewToWorld;
     uniform mat4 WorldToView;
-
+    
     #define NUM_BOXES 256
+    uniform int NBoxesThisFrame;
     uniform vec3 BoxPositions[NUM_BOXES];
     uniform vec3 BoxColours[NUM_BOXES];
     uniform vec3 BoxSizes[NUM_BOXES];
@@ -199,6 +200,8 @@ var LightingPassFragmentShaderFooterSource = `
 
         for (int i = 0; i < NUM_BOXES; ++i)
         {
+            if (i > NBoxesThisFrame) break;
+
             result = IntersectRayBox(ray, 
                 Box(
                     BoxPositions[i],
