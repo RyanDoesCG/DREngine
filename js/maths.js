@@ -245,14 +245,12 @@ function perspective (fov, near, far, width, height)
     var s = 1.0 / Math.tan(fov * 0.5 * Math.PI / 180.0)
     var f = far
     var n = near
-    var hAspect = height / width
-    var vAspect = 1.0
-
+    var aspect = height / width
     return matrix(
-        s * hAspect,    0.0,   0.0,            0.0,
-        0.0,  s * vAspect,     0.0,            0.0,
-        0.0,  0.0,  -(f / (f - n)), -(f * n / (f - n)),
-        0.0,  0.0,  -1.0 ,           0.0);
+        s * aspect, 0.0,   0.0,            0.0,
+        0.0,        s,     0.0,            0.0,
+        0.0,        0.0,  -(f / (f - n)), -(f * n / (f - n)),
+        0.0,        0.0,  -1.0 ,           0.0);
 }
 
 function orthographic (width, near, far)

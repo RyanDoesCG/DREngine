@@ -1,4 +1,5 @@
-(function () {
+(function () 
+{
     var canvas = document.getElementById('canv')
     var gl = canvas.getContext("webgl2")
     var ui = document.getElementById("ui")
@@ -394,8 +395,8 @@
     var CameraRight = RIGHT;
     var CameraUp = UP;
 
-    function ComputeView () {
-
+    function ComputeView () 
+    {
         projMatrix = perspective(FOV, Near, Far, canvas.clientWidth, canvas.clientHeight)
 
         worldToViewMatrix = identity()
@@ -463,7 +464,8 @@
     }
 
     // RENDER PASSES
-    function BasePass () {
+    function BasePass () 
+    {
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.bindFramebuffer(gl.FRAMEBUFFER, basePassFrameBuffer);
         gl.clearColor(0.25, 0.25, 0.25, 0.0);
@@ -496,7 +498,8 @@
         }
     }
 
-    function LightingPass () {
+    function LightingPass () 
+    {
         gl.viewport(0, 0, canvas.width, canvas.height);
 
         LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
@@ -552,7 +555,8 @@
         gl.disable(gl.BLEND)
     }
 
-    function TAAPass () {
+    function TAAPass () 
+    {
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.clearColor(0, 0, 0, 0);
@@ -624,7 +628,8 @@
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    function Render () {
+    function Render () 
+    {
         BasePass();
         LightingPass();
         TAAPass();
@@ -637,7 +642,8 @@
     var hideUI = false;
     var frameID = 1;
 
-    function Loop () {
+    function Loop () 
+    {
         let TimeSinceLastUpdate = Date.now() - LastLoopEnded;
 
         PollInput();
@@ -709,7 +715,8 @@
     var UpArrowPressed = false;
     var DownArrowPressed = false;
 
-    function PollInput() {
+    function PollInput() 
+    {
         var speed = 0.05
         var maxVelocity = 1.0
         var minVelocity = 0.01
@@ -729,7 +736,8 @@
         
     }
 
-    function DoMovement() {
+    function DoMovement() 
+    {
         SpherePositions[0] = CameraPosition[0] + (CameraForward[0] * 10.0);
         SpherePositions[1] = CameraPosition[1] + (CameraForward[1] * 10.0);
         SpherePositions[2] = CameraPosition[2] + (CameraForward[2] * 10.0);
@@ -772,7 +780,8 @@
         document.cookie = "LastCameraRotationZ=" + CameraRotation[2];
     }
 
-    function flipkey (event) {
+    function flipkey (event) 
+    {
         if (!event.repeat)
         {
             if      (event.key == 'a') APressed = !APressed
@@ -832,5 +841,4 @@
     
     BuildScene()
     requestAnimationFrame(Loop);
-    //setInterval(Loop, 33);
 }())

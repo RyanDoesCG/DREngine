@@ -1,4 +1,5 @@
-function createShader(gl, stage, source) {
+function createShader(gl, stage, source) 
+{
     console.log(source)
     var shader = gl.createShader(stage);
     gl.shaderSource(shader, source);
@@ -12,7 +13,8 @@ function createShader(gl, stage, source) {
     gl.deleteShader(shader);
 }
 
-function createProgram(gl, vertexStage, FragmentStage) {
+function createProgram(gl, vertexStage, FragmentStage) 
+{
     var program = gl.createProgram();
     gl.attachShader(program, vertexStage);
     gl.attachShader(program, FragmentStage);
