@@ -212,7 +212,7 @@
     // once on startup
     function BuildScene()
     {
-        /*
+        
         // Cornell Box for Debugging
         BoxPositions = [ 
             0.0, -0.2, 0.0, 
@@ -220,23 +220,26 @@
             -2.0, 1.35, 0.0,  
             2.0, 1.35, 0.0,  
             0.0, 1.3, -2.0,  
-            0.0, 3.4, 0.0 ]
+            0.0, 3.4, 0.0,
+            0.0, 3.35, 0.0 ]
         BoxColours = [ 
             0.32, 0.32, 0.32, 
             0.32, 0.32, 0.32, 
-            1.0, 0.0, 0.0, 
-            0.0, 1.0, 0.0, 
+            2.0, 0.0, 0.0, 
+            0.0, 2.0, 0.0, 
             0.32, 0.32, 0.32, 
-            0.32, 0.32, 0.32 ]
+            0.32, 0.32, 0.32 ,
+            4.0, 4.0, 4.0 ]
         BoxSizes = [ 
             1.0, 1.0, 1.0, 
             4.1, 0.1, 4.0, 
             0.1, 4.0, 4.0, 
             0.1, 4.0, 4.0, 
             4.1, 4.1, 0.1, 
-            4.1, 0.1, 4.0 ]
-        */
-
+            4.1, 0.1, 4.0 ,
+            2.0, 0.01, 2.0 ]
+        return;
+        
         
         let GridSize = 60
         var NBoxes = 0    
@@ -317,6 +320,16 @@
 
     function BuildRayTracingScene()
     {
+        /*
+        if ((BoxPositions.length / 3) < MAX_RT_PRIMITIVES)
+        {
+            RTBoxPositions = BoxPositions
+            RTBoxColours = BoxColours
+            RTBoxSizes = BoxSizes
+            return;
+        }
+        */
+
         Culled = 0;
         Candidates = []
         for (var i = 0; i < BoxPositions.length; i += 3)
@@ -401,7 +414,7 @@
 
     function ComputeView () {
 
-        projMatrix = perspective(FOV, Near, Far)
+        projMatrix = perspective(FOV, Near, Far, canvas.clientWidth, canvas.clientHeight)
 
         worldToViewMatrix = identity()
         worldToViewMatrix = multiplym(translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]), worldToViewMatrix)
@@ -744,12 +757,8 @@
         SpherePositions[1] = CameraPosition[1] + (CameraForward[1] * 10.0);
         SpherePositions[2] = CameraPosition[2] + (CameraForward[2] * 10.0);
 
-        /*
-        var b = Math.sin(frameID * 0.1) + 1.0;
-        BoxColours[3] = Math.sin((frameID + 234) * 0.05452) + 1.0;
-        BoxColours[4] = Math.sin((frameID + 54) * 0.124) + 1.0;;
-        BoxColours[5] = Math.sin((frameID + 294) * 0.06234) + 1.0;;
 
+        /*
         b = Math.sin(frameID * 0.1) + 1.0;
         BoxColours[6] = Math.sin((frameID + 65324) * 0.1) + 1.0;;
         BoxColours[7] = Math.sin((frameID + 123) * 0.1) + 1.0;;

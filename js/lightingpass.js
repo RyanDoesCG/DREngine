@@ -57,7 +57,7 @@ var LightingPassFragmentShaderFooterSource = `
         seed += 0.1;
         return texture(
             BlueNoise, 
-            vec2(sin(Time * 0.01), cos(Time * 0.01)) 
+            vec2(sin(Time * 1.0), cos(Time * 1.0)) 
             
             + 
             (frag_uvs * 2.0)+ 
@@ -236,7 +236,7 @@ var LightingPassFragmentShaderFooterSource = `
             for (int i = 0; i < N_Samples; ++i)
             {
                 Ray BounceRay = Ray(
-                    WorldPosition.xyz + Normal.xyz * 0.0001, 
+                    WorldPosition.xyz + Normal.xyz * 0.01, 
                     normalize(Normal.xyz + randomDirection()));
 
                 Hit BounceHit = IntersectScene(BounceRay);

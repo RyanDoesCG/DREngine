@@ -50,7 +50,7 @@ var TAAPassFragmentShaderFooterSource = `
     bool shouldRejectSample (vec2 uv)
     {
         bool inRange = uv.x < 1.0 && uv.x > 0.0 && uv.y < 1.0 && uv.y > 0.0;
-        bool farFromCurrentPixel = length(uv - frag_uvs) > 0.9;
+        bool farFromCurrentPixel = length(uv - frag_uvs) > 0.1;
         return !inRange || farFromCurrentPixel;
     }
 
