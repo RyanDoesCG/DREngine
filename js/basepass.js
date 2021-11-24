@@ -26,7 +26,7 @@ var basePassVertexShaderSource =
 
     void main() 
     {
-        const float jitter = 0.001;
+        const float jitter = 0.0005;
 
         mat4 jitter_proj = proj;
         jitter_proj[2][0] = random(vec2(Time, 0.0) * 0.01) * jitter;

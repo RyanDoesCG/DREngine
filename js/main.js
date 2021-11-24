@@ -7,7 +7,7 @@
 
     var extensions = gl.getSupportedExtensions();
     console.log(extensions)
-    var ext = gl.getExtension('EXT_color_buffer_float');
+    gl.getExtension('EXT_color_buffer_float');
 
     let FORWARD = vec4(0.0, 0.0, -1.0, 0.0);
     let RIGHT = vec4(1.0, 0.0, 0.0, 0.0);
@@ -87,10 +87,6 @@
     var LightingPassWhiteNoiseSampler = gl.getUniformLocation(LightingPassShaderProgram, "WhiteNoise")
     var LightingPassBlueNoiseSampler= gl.getUniformLocation(LightingPassShaderProgram, "BlueNoise")
 
-    var LightingPassLightPositionsUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPositions")
-    var LightingPassLightColoursUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightColours")
-    var LightingPassLightPowersUniform = gl.getUniformLocation(LightingPassShaderProgram, "LightPowers")
-
     var LightingPassNBoxesThisFrameUniform = gl.getUniformLocation(LightingPassShaderProgram, "NBoxesThisFrame")
     var LightingPassBoxPositions = gl.getUniformLocation(LightingPassShaderProgram, "BoxPositions")
     var LightingPassBoxColours = gl.getUniformLocation(LightingPassShaderProgram, "BoxColours")
@@ -139,11 +135,13 @@
     // Screen Pass Geometry Resources
     var screenGeometryVertexArray = gl.createVertexArray();
     gl.bindVertexArray(screenGeometryVertexArray);
+
     var screenGeometryPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, screenGeometryPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, screenGeometryPositions, gl.STATIC_DRAW);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(0);
+
     var screenGeometryUVBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, screenGeometryUVBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, screenGeometryUVs, gl.STATIC_DRAW);
@@ -153,16 +151,19 @@
     // Scene Geometry Resources
     var boxGeometryVertexArray = gl.createVertexArray();
     gl.bindVertexArray(boxGeometryVertexArray);
+
     var boxGeometryPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, boxGeometryPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, boxGeometryPositions, gl.STATIC_DRAW);
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(0);
+
     var boxGeometryNormalBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, boxGeometryNormalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, boxGeometryNormals, gl.STATIC_DRAW);
     gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(1);
+
     var boxGeometryUVBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, boxGeometryUVBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, boxGeometryUVs, gl.STATIC_DRAW);
@@ -171,32 +172,24 @@
 
     var sphereGeometryVertexArray = gl.createVertexArray();
     gl.bindVertexArray(sphereGeometryVertexArray);
+
     var sphereGeometryPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, sphereGeometryPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, sphereGeometryPositions, gl.STATIC_DRAW);
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(0);
+
     var sphereGeometryNormalBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, sphereGeometryNormalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, sphereGeometryNormals, gl.STATIC_DRAW);
     gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(1);
+
     var sphereGeometryUVBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, sphereGeometryUVBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, sphereGeometryUVs, gl.STATIC_DRAW);
     gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(2);
-
-    // LIGHTS
-    var LightPositions = [
-        0.0, 1.8, -8.0
-    ]
-    var LightColours = [
-        1.0, 1.0, 1.0,
-    ]
-    var LightPowers = [
-        1.0, 
-    ]
+    gl.enableVertexAttribArray(2)
 
     // SCENE
     var BoxPositions = []
@@ -320,16 +313,6 @@
 
     function BuildRayTracingScene()
     {
-        /*
-        if ((BoxPositions.length / 3) < MAX_RT_PRIMITIVES)
-        {
-            RTBoxPositions = BoxPositions
-            RTBoxColours = BoxColours
-            RTBoxSizes = BoxSizes
-            return;
-        }
-        */
-
         Culled = 0;
         Candidates = []
         for (var i = 0; i < BoxPositions.length; i += 3)
@@ -398,8 +381,7 @@
     var viewToWorldMatrix = identity();
     var modelMatrix       = identity();
 
-    // Need arbitrary point and normal for planes
-    // to half-plane test geometry against
+
     //    ax + by + cz + d = 0
     var FrustumTop    = [ 0.0, 0.0, 0.0, 0.0 ]
     var FrustumBottom = [ 0.0, 0.0, 0.0, 0.0 ]
@@ -430,36 +412,48 @@
 
         let viewProj = identity()
         viewProj = multiplym(projMatrix, worldToViewMatrix)
-        
-        FrustumLeft[0] = access(viewProj, 0, 3) + access(viewProj, 0, 0)
-        FrustumLeft[1] = access(viewProj, 1, 3) + access(viewProj, 1, 0)
-        FrustumLeft[2] = access(viewProj, 2, 3) + access(viewProj, 2, 0)
-        FrustumLeft[3] = access(viewProj, 3, 3) + access(viewProj, 3, 0)
 
-        FrustumRight[0] = access(viewProj, 0, 3) - access(viewProj, 0, 0)
-        FrustumRight[1] = access(viewProj, 1, 3) - access(viewProj, 1, 0)
-        FrustumRight[2] = access(viewProj, 2, 3) - access(viewProj, 2, 0)
-        FrustumRight[3] = access(viewProj, 3, 3) - access(viewProj, 3, 0)
+        FrustumLeft = [
+            access(viewProj, 0, 3) + access(viewProj, 0, 0),
+            access(viewProj, 1, 3) + access(viewProj, 1, 0),
+            access(viewProj, 2, 3) + access(viewProj, 2, 0),
+            access(viewProj, 3, 3) + access(viewProj, 3, 0)
+        ]
 
-        FrustumTop[0] = access(viewProj, 0, 3) - access(viewProj, 0, 1)
-        FrustumTop[1] = access(viewProj, 1, 3) - access(viewProj, 1, 1)
-        FrustumTop[2] = access(viewProj, 2, 3) - access(viewProj, 2, 1)
-        FrustumTop[3] = access(viewProj, 3, 3) - access(viewProj, 3, 1)
+        FrustumRight = [
+            access(viewProj, 0, 3) - access(viewProj, 0, 0),
+            access(viewProj, 1, 3) - access(viewProj, 1, 0),
+            access(viewProj, 2, 3) - access(viewProj, 2, 0),
+            access(viewProj, 3, 3) - access(viewProj, 3, 0)
+        ]
 
-        FrustumBottom[0] = access(viewProj, 0, 3) + access(viewProj, 0, 1)
-        FrustumBottom[1] = access(viewProj, 1, 3) + access(viewProj, 1, 1)
-        FrustumBottom[2] = access(viewProj, 2, 3) + access(viewProj, 2, 1)
-        FrustumBottom[3] = access(viewProj, 3, 3) + access(viewProj, 3, 1)
+        FrustumTop = [
+            access(viewProj, 0, 3) - access(viewProj, 0, 1),
+            access(viewProj, 1, 3) - access(viewProj, 1, 1),
+            access(viewProj, 2, 3) - access(viewProj, 2, 1),
+            access(viewProj, 3, 3) - access(viewProj, 3, 1)
+        ]
 
-        FrustumFront[0] = access(viewProj, 0, 3) + access(viewProj, 0, 2)
-        FrustumFront[1] = access(viewProj, 1, 3) + access(viewProj, 1, 2)
-        FrustumFront[2] = access(viewProj, 2, 3) + access(viewProj, 2, 2)
-        FrustumFront[3] = access(viewProj, 3, 3) + access(viewProj, 3, 2)
+        FrustumBottom = [
+            access(viewProj, 0, 3) + access(viewProj, 0, 1),
+            access(viewProj, 1, 3) + access(viewProj, 1, 1),
+            access(viewProj, 2, 3) + access(viewProj, 2, 1),
+            access(viewProj, 3, 3) + access(viewProj, 3, 1)
+        ]
 
-        FrustumBack[0] = access(viewProj, 0, 3) - access(viewProj, 0, 2)
-        FrustumBack[1] = access(viewProj, 1, 3) - access(viewProj, 1, 2)
-        FrustumBack[2] = access(viewProj, 2, 3) - access(viewProj, 2, 2)
-        FrustumBack[3] = access(viewProj, 3, 3) - access(viewProj, 3, 2)
+        FrustumFront = [
+            access(viewProj, 0, 3) + access(viewProj, 0, 2),
+            access(viewProj, 1, 3) + access(viewProj, 1, 2),
+            access(viewProj, 2, 3) + access(viewProj, 2, 2),
+            access(viewProj, 3, 3) + access(viewProj, 3, 2)
+        ]
+
+        FrustumBack = [
+            access(viewProj, 0, 3) - access(viewProj, 0, 2),
+            access(viewProj, 1, 3) - access(viewProj, 1, 2),
+            access(viewProj, 2, 3) - access(viewProj, 2, 2),
+            access(viewProj, 3, 3) - access(viewProj, 3, 2)
+        ]
 
         var LastView = ViewTransforms.pop();
         ViewTransforms.unshift(multiplym(projMatrix, worldToViewMatrix))
@@ -490,17 +484,6 @@
         var BoxSizesToRasterize     = [...RasterBoxSizes]
         var BoxColoursToRasterize   = [...RasterBoxColours]
 
-        //for (var i = 0; i < RasterBoxPositions.length; i += 3)
-        //{
-        //    BoxPositionsToRasterize.push(RasterBoxPositions[i + 0] + CameraPosition[0])
-        //    BoxPositionsToRasterize.push(RasterBoxPositions[i + 1])
-        //    BoxPositionsToRasterize.push(RasterBoxPositions[i + 2] + CameraPosition[2])
-//
-        //    BoxColoursToRasterize.push(RasterBoxColours[i + 0])
-        //    BoxColoursToRasterize.push(RasterBoxColours[i + 1])
-        //    BoxColoursToRasterize.push(RasterBoxColours[i + 2])
-        //}
-
         while (BoxPositionsToRasterize.length > 0)
         {
             gl.bindVertexArray(boxGeometryVertexArray);
@@ -508,7 +491,6 @@
             gl.uniform3fv(basePassScaleLocation, BoxSizesToRasterize);
             gl.uniform3fv(basePassColorUniform, BoxColoursToRasterize)
             gl.drawArraysInstanced(gl.TRIANGLES, 0, boxGeometryPositions.length / 3, BoxPositionsToRasterize.length / 3);
-
             BoxPositionsToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
             BoxColoursToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
         }
@@ -545,10 +527,6 @@
         gl.activeTexture(gl.TEXTURE5);
         gl.bindTexture(gl.TEXTURE_2D, BlueNoiseTexture);
         gl.uniform1i(LightingPassBlueNoiseSampler, 5);
-
-        gl.uniform3fv(LightingPassLightPositionsUniform, LightPositions);
-        gl.uniform3fv(LightingPassLightColoursUniform, LightColours);
-        gl.uniform1fv(LightingPassLightPowersUniform, LightPowers);
 
         if (RTBoxPositions.length > 0)
         {
@@ -704,7 +682,6 @@
         ui.innerHTML +="<p>" + RasterBoxPositions.length / 3 + " boxes sent to raster </p>";
         ui.innerHTML +="<p>" + RTBoxPositions.length / 3 + " boxes in ray tracing </p>";
         ui.innerHTML +="<p>" + Culled + " culled with dot </p>";
-        
 
         size.innerHTML = "<p>" + canvas.width + " x " + canvas.height + "</p>"
         size.innerHTML += "<p>" + canvas.clientWidth + " x " + canvas.clientHeight + "</p>"
@@ -793,7 +770,6 @@
         document.cookie = "LastCameraRotationX=" + CameraRotation[0];
         document.cookie = "LastCameraRotationY=" + CameraRotation[1];
         document.cookie = "LastCameraRotationZ=" + CameraRotation[2];
-
     }
 
     function flipkey (event) {

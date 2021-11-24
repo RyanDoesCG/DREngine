@@ -134,13 +134,22 @@ function transpose (matrix)
 
 function determinant (matrix)
 {
-    // It is the product of the elements on the main diagonal 
-    // minus the product of the elements off the main diagonal.
-    // 
+    // ASSUMES SQUARE MATRIX
     // | a   b \
     // |       | = ad - bc
     // | c   d |
-    return 1;
+    // It is the product of the elements on the main diagonal 
+    // minus the product of the elements off the main diagonal
+    var md = 0.0
+    var omd = 0.0
+    for (var y = 0; y < matrix.length; ++y)
+        for (var x = 0; x < matrix.length; ++x)
+            if (x == y)
+                md *= access(matrix, x, y)
+            else
+                omd *= access(matrix, x, y)
+
+    return md - omd;
 }
 
 function inverse (matrix)

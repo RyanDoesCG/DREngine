@@ -58,12 +58,10 @@ var LightingPassFragmentShaderFooterSource = `
         return texture(
             BlueNoise, 
             vec2(sin(Time * 1.0), cos(Time * 1.0)) 
-            
-            + 
-            (frag_uvs * 2.0)+ 
-            vec2(seed)
-            
-            ).x;
+                + 
+            (frag_uvs * 2.0) 
+                + 
+            vec2(seed)).x;
     }
 
     float random (float min, float max)
@@ -252,20 +250,6 @@ var LightingPassFragmentShaderFooterSource = `
         return Result;
     }
 
-    vec4 raytraced_exp ()
-    {
-        vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
-
-        vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
-        vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
-        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
- 
-        Result.xyz += randomDirection().xyz;
-
-
-        return Result;
-    }
-
     void main() 
     {
         vec4 Result;
@@ -273,9 +257,7 @@ var LightingPassFragmentShaderFooterSource = `
         Result = (raytraced_diffuse());
 
         out_color = Result;
-
-        //out_color = min(vec4(1.0), max(vec4(0.0), Result));
-
+        
         float gamma = 2.2;
         out_color.rgb = pow(out_color.rgb, vec3(1.0/gamma));
 

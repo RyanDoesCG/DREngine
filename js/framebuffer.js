@@ -8,6 +8,8 @@ function createFramebuffer(gl, target)
         gl.TEXTURE_2D, 
         target, 
         0);
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) 
+        alert("Framebuffer creation failed")
     return framebuffer;
 }
 
@@ -27,7 +29,8 @@ function createFramebuffer(gl, targetA, targetB)
         gl.TEXTURE_2D, 
         targetB, 
         0);
-   // console.log(gl.checkFramebufferStatus(gl.FRAMEBUFFER))
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) 
+        alert("Framebuffer creation failed")
     return framebuffer;
 }
 
@@ -59,6 +62,7 @@ function createFramebuffer(gl, targetA, targetB, targetC, targetD)
         gl.TEXTURE_2D, 
         targetD, 
         0);
-   // console.log(gl.checkFramebufferStatus(gl.FRAMEBUFFER))
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) 
+        alert("Framebuffer creation failed")
     return framebuffer;
 }

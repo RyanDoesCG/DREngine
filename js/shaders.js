@@ -1,6 +1,5 @@
 function createShader(gl, stage, source) {
     console.log(source)
-
     var shader = gl.createShader(stage);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
