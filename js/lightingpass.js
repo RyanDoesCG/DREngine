@@ -54,12 +54,15 @@ var LightingPassFragmentShaderFooterSource = `
     float seed = 0.0;
     float random ()
     {
+        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
+        vec2 uv = vec2(WorldPosition.x + WorldPosition.y, WorldPosition.z + WorldPosition.y);
+
         seed += 0.01;
         return texture(
-            BlueNoise, 
-            vec2(sin(Time * 1.0), cos(Time * 1.0)) 
+            WhiteNoise, 
+            vec2(sin(Time * 10.0), cos(Time * 10.0)) * 0.01
                 + 
-            (frag_uvs * 2.0) 
+            (uv * 6.0) 
                 + 
             vec2(seed)).x;
     }
@@ -226,6 +229,11 @@ var LightingPassFragmentShaderFooterSource = `
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
  
         Result += Albedo;
+
+        if (max(max(Result.x, Result.y), Result.z) == 1.0)
+        {
+            return Result;
+        }
 
         if (WorldPosition.w > 0.0)
         {
