@@ -62,7 +62,7 @@ var LightingPassFragmentShaderFooterSource = `
             WhiteNoise, 
             vec2(sin(Time * 10.0), cos(Time * 10.0)) * 0.01
                 + 
-            (uv * 6.0) 
+            (uv * 12.0) 
                 + 
             vec2(seed)).x;
     }

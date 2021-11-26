@@ -210,28 +210,34 @@
         // Cornell Box for Debugging
         BoxPositions = [ 
             0.0, -0.2, 0.0, 
+            
             0.0, -0.7, 0.0, 
             -2.0, 1.35, 0.0,  
             2.0, 1.35, 0.0,  
             0.0, 1.3, -2.0,  
             0.0, 3.4, 0.0,
-            0.0, 3.35, 0.0 ]
+            
+            0.0, 3.35, 0.0]
         BoxColours = [ 
-            8.0, 0.652, 8.654, 
-            0.32, 0.32, 0.32, 
-            0.32, 0.32, 0.32, 
-            0.32, 0.32, 0.32, 
-            0.32, 0.32, 0.32, 
-            0.32, 0.32, 0.32 ,
-            4.0, 4.0, 4.0 ]
+            0.1, 0.1, 0.1,
+
+            0.14, 0.14, 0.14, 
+            0.8, 0.32, 0.32, 
+            0.1, 0.8, 0.1, 
+            0.1, 0.1, 0.1, 
+            0.14, 0.14, 0.14,
+
+            4.0, 4.0, 4.0]
         BoxSizes = [ 
             1.0, 1.0, 1.0, 
+
             4.1, 0.1, 4.0, 
             0.1, 4.0, 4.0, 
             0.1, 4.0, 4.0, 
             4.1, 4.1, 0.1, 
             4.1, 0.1, 4.0 ,
-            2.0, 0.01, 2.0 ]
+
+            2.0, 0.01, 2.0]
         return;
         
         
@@ -296,12 +302,12 @@
         {
             let position = [Candidates[i][0], Candidates[i][1], Candidates[i][2]]
             let bounds = len([Candidates[i][6], Candidates[i][7], Candidates[i][8]])
-            if (!halfPlaneTest(FrustumLeft,   position, bounds)) continue;
-            if (!halfPlaneTest(FrustumRight,  position, bounds)) continue;
-            if (!halfPlaneTest(FrustumTop,    position, bounds)) continue;
-            if (!halfPlaneTest(FrustumBottom, position, bounds)) continue;
-            if (!halfPlaneTest(FrustumFront,  position, bounds)) continue;
-            if (!halfPlaneTest(FrustumBack,   position, bounds)) continue;
+            //if (!halfPlaneTest(FrustumLeft,   position, bounds)) continue;
+            //if (!halfPlaneTest(FrustumRight,  position, bounds)) continue;
+            //if (!halfPlaneTest(FrustumTop,    position, bounds)) continue;
+            //if (!halfPlaneTest(FrustumBottom, position, bounds)) continue;
+            //if (!halfPlaneTest(FrustumFront,  position, bounds)) continue;
+            //if (!halfPlaneTest(FrustumBack,   position, bounds)) continue;
             RasterBoxPositions.push(Candidates[i][0], Candidates[i][1], Candidates[i][2])
             RasterBoxColours.push(Candidates[i][3], Candidates[i][4], Candidates[i][5])
             RasterBoxSizes.push(Candidates[i][6], Candidates[i][7], Candidates[i][8])
