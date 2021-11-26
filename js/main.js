@@ -227,7 +227,7 @@
             0.1, 0.1, 0.1, 
             0.14, 0.14, 0.14,
 
-            4.0, 4.0, 4.0]
+            10.0, 10.0, 10.0]
         BoxSizes = [ 
             1.0, 1.0, 1.0, 
 
@@ -238,6 +238,18 @@
             4.1, 0.1, 4.0 ,
 
             2.0, 0.01, 2.0]
+
+        SpherePositions = [
+            1.0, -0.14, 1.5
+        ]
+
+        SphereColours = [
+            0.1, 0.1, 0.1
+        ]
+
+        SphereSizes = [
+            0.5
+        ]
         return;
         
         
@@ -281,6 +293,10 @@
     var RasterBoxColours = []
     var RasterBoxSizes = []
 
+    var RasterSpherePositions = []
+    var RasterSphereColours = []
+    var RasterSphereSizes = []
+
     // once before each frame
     function BuildRasterScene()
     {
@@ -312,12 +328,20 @@
             RasterBoxColours.push(Candidates[i][3], Candidates[i][4], Candidates[i][5])
             RasterBoxSizes.push(Candidates[i][6], Candidates[i][7], Candidates[i][8])
         }
+
+        RasterSpherePositions = SpherePositions
+        RasterSphereColours = SphereColours
+        RasterSphereSizes = SphereSizes
     }
 
     // RAY TRACING SCENE
     var RTBoxPositions = []
     var RTBoxColours = []
     var RTBoxSizes = []
+
+    var RTSpherePositions = []
+    var RTSphereColours = []
+    var RTSphereSizes = []
 
     function BuildRayTracingScene()
     {
@@ -369,6 +393,10 @@
             RTBoxColours.push(Candidates[i][3], Candidates[i][4], Candidates[i][5])
             RTBoxSizes.push(Candidates[i][6], Candidates[i][7], Candidates[i][8])
         }
+
+        RTSpherePositions = SpherePositions
+        RTSphereColours = SphereColours
+        RTSphereSizes = SphereSizes
     }
     
     // CAMERA
@@ -492,8 +520,8 @@
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
 
         var BoxPositionsToRasterize = [...RasterBoxPositions]
-        var BoxSizesToRasterize     = [...RasterBoxSizes]
         var BoxColoursToRasterize   = [...RasterBoxColours]
+        var BoxSizesToRasterize     = [...RasterBoxSizes]
 
         while (BoxPositionsToRasterize.length > 0)
         {
@@ -505,6 +533,26 @@
             BoxPositionsToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
             BoxColoursToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
         }
+
+        
+        var SpherePositionsToRasterize = [...RasterSpherePositions]
+        var SphereColoursToRasterize   = [...RasterSphereColours]
+        var SphereSizesToRasterize     = []
+
+        for (var i = 0; i < RasterSphereSizes.length; ++i)
+        {
+            SphereSizesToRasterize.push(RasterSphereSizes[i], RasterSphereSizes[i], RasterSphereSizes[i])
+        }
+
+        gl.bindVertexArray(sphereGeometryVertexArray);
+        gl.uniform3fv(basePassTranslationLocation, SpherePositionsToRasterize);
+        gl.uniform3fv(basePassScaleLocation, SphereSizesToRasterize);
+        gl.uniform3fv(basePassColorUniform, SphereColoursToRasterize)
+        gl.drawArraysInstanced(gl.TRIANGLES, 0, sphereGeometryPositions.length / 3, SpherePositionsToRasterize.length / 3);
+        SpherePositionsToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
+        SphereColoursToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
+
+        
     }
 
     function LightingPass () 
@@ -748,11 +796,6 @@
 
     function DoMovement() 
     {
-        SpherePositions[0] = CameraPosition[0] + (CameraForward[0] * 10.0);
-        SpherePositions[1] = CameraPosition[1] + (CameraForward[1] * 10.0);
-        SpherePositions[2] = CameraPosition[2] + (CameraForward[2] * 10.0);
-
-
         /*
         b = Math.sin(frameID * 0.1) + 1.0;
         BoxColours[6] = Math.sin((frameID + 65324) * 0.1) + 1.0;;

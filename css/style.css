@@ -17,6 +17,15 @@ p {
     color: #FFFFFF;
 }
 
+label {
+    padding: 0.2em;
+    color: #FFFFFF;
+}
+
+input {
+    padding: 0.2em;
+}
+
 body
 {
     height: 100%;
@@ -50,6 +59,18 @@ canvas
     color:rgba(0.0, 0.0, 0.0, 0.0);
     bottom: 20px;  
     left: 20px;
+}
+
+#controls {
+    position: absolute;
+    z-index: 1;
+    color:rgba(0.0, 0.0, 0.0, 0.0);
+    bottom: 20px;  
+    right: 20px;
+}
+
+#controls p {
+    color: white;
 }
 
 #notes p {

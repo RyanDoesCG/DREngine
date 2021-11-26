@@ -38,7 +38,7 @@ var LightingPassFragmentShaderHeaderSource =
     uniform vec3 BoxColours[NUM_BOXES];
     uniform vec3 BoxSizes[NUM_BOXES];
 
-    #define NUM_SPHERES 0
+    #define NUM_SPHERES 1
     #if NUM_SPHERES > 0
     uniform vec3 SpherePositions[NUM_SPHERES];
     uniform vec3 SphereColours[NUM_SPHERES];
@@ -258,11 +258,25 @@ var LightingPassFragmentShaderFooterSource = `
         return Result;
     }
 
+    vec4 basePass ()
+    {
+        vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
+
+        vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
+        vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
+        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
+ 
+        Result += Albedo;
+
+        return Result;
+    }
+
     void main() 
     {
         vec4 Result;
 
         Result = (raytraced_diffuse());
+      //  Result = basePass();
 
         out_color = Result;
         

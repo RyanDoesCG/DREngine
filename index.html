@@ -14,10 +14,23 @@
             <p> - Dynamic Resolution</p>
             <p> - Account for box size in frustum cull</p>
         </div>
-        <div id="size"></div>
+        <div id="size">
+            <p>temporal denoise</p>
+        </div>
         <div id="loading"><p>loading</p></div>
 
-        <canvas width="1000" height="1000" id="canv"></canvas>
+        <!--
+        <div id="controls">
+            <input type="checkbox" id="scales" name="scales" checked>
+            <label for="scales">temporal AA</label>
+            <br>
+            <br>
+            <input type="checkbox" id="horns" name="horns">
+            <label for="horns">temporal denoise</label>
+        </div>
+        -->
+
+        <canvas width="1024" height="1024" id="canv"></canvas>
         <script src="js/maths.js"></script>
         <script src="js/noise.js"></script>
         <script src="js/geometry.js"></script>
