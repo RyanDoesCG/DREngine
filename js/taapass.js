@@ -13,10 +13,12 @@ var TAAPassFragmentShaderHeaderSource =
     `#version 300 es
     precision highp float;
 
+    #define NFrames 15
+
     uniform sampler2D WorldPositionBuffer;
     uniform sampler2D DepthBuffer;
 
-    uniform sampler2D Frames[15];
+    uniform sampler2D Frames[NFrames];
     uniform mat4      View0;
     uniform mat4      View1;
     uniform mat4      View2;
@@ -47,10 +49,11 @@ var TAAPassFragmentShaderHeaderSource =
 
 var TAAPassFragmentShaderFooterSource = `
 
+
     bool shouldRejectSample (vec2 uv)
     {
         bool inRange = uv.x < 1.0 && uv.x > 0.0 && uv.y < 1.0 && uv.y > 0.0;
-        bool farFromCurrentPixel = length(uv - frag_uvs) > 0.05;
+        bool farFromCurrentPixel = length(uv - frag_uvs) > 0.04;
         return !inRange || farFromCurrentPixel;
     }
 
@@ -60,16 +63,20 @@ var TAAPassFragmentShaderFooterSource = `
 
         vec4 position = texture(WorldPositionBuffer, frag_uvs);
 
+        const float MaxWeight = 1.0;
+        const float MinWeight = 0.25;
+
+        float weight = 1.0;
         float samples = 0.0;
 
         vec4 pl = position;
         vec2 uv = frag_uvs;
-        Result += texture(Frames[0],  uv) * 1.0;
+        Result += texture(Frames[0], uv) * weight;
         samples += 1.0;
 
         if (position.w == 0.0)
         {
-            out_color = vec4(Result.xyz, 1.0);
+            out_color = vec4(Result.xyz, 1.0) * weight;
             return;
         }
 
@@ -77,7 +84,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy / pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[1],  uv);
+            Result += texture(Frames[1],  uv) * weight;
             samples += 1.0;
         }
 
@@ -85,7 +92,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[2],  uv);
+            Result += texture(Frames[2],  uv) * weight;
             samples += 1.0;
         }
 
@@ -93,7 +100,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[3],  uv);
+            Result += texture(Frames[3],  uv) * weight;
             samples += 1.0;
         }
 
@@ -101,7 +108,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[4],  uv);
+            Result += texture(Frames[4],  uv) * weight;
             samples += 1.0;
         }
 
@@ -109,7 +116,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[5],  uv);
+            Result += texture(Frames[5],  uv) * weight;
             samples += 1.0;
         }
 
@@ -117,7 +124,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[6],  uv);
+            Result += texture(Frames[6],  uv) * weight;
             samples += 1.0;
         }
 
@@ -125,7 +132,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[7],  uv);
+            Result += texture(Frames[7],  uv) * weight;
             samples += 1.0;
         }
 
@@ -133,7 +140,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[8],  uv);
+            Result += texture(Frames[8],  uv) * weight;
             samples += 1.0;
         }
 
@@ -141,7 +148,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[9],  uv);
+            Result += texture(Frames[9],  uv) * weight;
             samples += 1.0;
         }
 
@@ -149,7 +156,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[10],  uv);
+            Result += texture(Frames[10],  uv) * weight;
             samples += 1.0;
         }
 
@@ -157,7 +164,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[11],  uv);
+            Result += texture(Frames[11],  uv) * weight;
             samples += 1.0;
         }
 
@@ -165,7 +172,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[12],  uv);
+            Result += texture(Frames[12],  uv) * weight;
             samples += 1.0;
         }
 
@@ -173,7 +180,7 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[13],  uv);
+            Result += texture(Frames[13],  uv) * weight;
             samples += 1.0;
         }
 
@@ -181,9 +188,14 @@ var TAAPassFragmentShaderFooterSource = `
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
         if (!shouldRejectSample(uv))
         {
-            Result += texture(Frames[14],  uv);
+            Result += texture(Frames[14],  uv) * weight;
             samples += 1.0;
         }
 
         out_color = vec4(Result.xyz / samples, 1.0);
     }`
+
+
+    /*
+ `
+     */

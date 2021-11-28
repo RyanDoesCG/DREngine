@@ -82,6 +82,7 @@
     var basePassScaleLocation = gl.getUniformLocation(basePassShaderProgram, "scales")
     var basePassViewMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "view");
     var basePassProjMatrixLocation = gl.getUniformLocation(basePassShaderProgram, "proj")
+    var basePassWindowSizeLocation = gl.getUniformLocation(basePassShaderProgram, "WindowSize")
     var basePassTimeUniform = gl.getUniformLocation(basePassShaderProgram, "Time")
     var basePassColorUniform = gl.getUniformLocation(basePassShaderProgram, "Color")
 
@@ -265,7 +266,7 @@
     
                 let y = -10.0 + (sin(xPosition * 0.53423) + cos(zPosition * 0.32532))
                // let y = Level1[x][z]
-               //let y = noise(xPosition, zPosition) * 1.0
+               //let y = -10.0 + noise(xPosition, zPosition) * 0.5
                 BoxPositions.push(
                     xPosition, 
                     y, 
@@ -516,6 +517,7 @@
         gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1,gl.COLOR_ATTACHMENT2]);
         gl.useProgram(basePassShaderProgram);
 
+        gl.uniform2fv(basePassWindowSizeLocation, [canvas.width, canvas.height])
         gl.uniform1f(basePassTimeUniform, frameID);
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
