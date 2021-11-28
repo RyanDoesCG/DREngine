@@ -43,10 +43,11 @@
             TAAPassFragmentShaderFooterSource))
 
     // FRAME BUFFERS
-    var albedoBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
-    var normalBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE)
-    var worldposBuffer = createColourTexture(gl, canvas.width, canvas.height, gl.RGBA32F, gl.FLOAT)
-    var depthBuffer  = createDepthTexture(gl, canvas.width, canvas.height)
+    let MSAA = 1.0
+    var albedoBuffer = createColourTexture(gl,   Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA), gl.RGBA, gl.UNSIGNED_BYTE)
+    var normalBuffer = createColourTexture(gl,   Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA), gl.RGBA, gl.UNSIGNED_BYTE)
+    var worldposBuffer = createColourTexture(gl, Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA), gl.RGBA32F, gl.FLOAT)
+    var depthBuffer  = createDepthTexture(gl,    Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA))
     var basePassFrameBuffer = createFramebuffer(gl, 
         albedoBuffer, 
         normalBuffer,
@@ -237,14 +238,14 @@
             4.1, 4.1, 0.1, 
             4.1, 0.1, 4.0 ,
 
-            2.0, 0.01, 2.0]
+            1.0, 0.01, 1.0]
 
         SpherePositions = [
             1.0, -0.14, 1.5
         ]
 
         SphereColours = [
-            0.1, 0.1, 0.1
+            0.05, 0.05, 0.05
         ]
 
         SphereSizes = [
@@ -503,7 +504,7 @@
     // RENDER PASSES
     function BasePass () 
     {
-        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.viewport(0, 0, canvas.width * MSAA, canvas.height * MSAA);
         gl.bindFramebuffer(gl.FRAMEBUFFER, basePassFrameBuffer);
         gl.clearColor(0.01, 0.01, 0.01, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -683,6 +684,20 @@
 
         gl.bindVertexArray(screenGeometryVertexArray);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        
+        // Using the anti-aliased image as the history sample
+        // much better quality, bad ghosting
+        gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[0])
+        gl.copyTexImage2D(
+            gl.TEXTURE_2D, 
+            0,
+            gl.RGBA, 
+            0, 0,
+            canvas.width,
+            canvas.height,
+            0);
+        
     }
 
     function Render () 
@@ -775,7 +790,7 @@
 
     function PollInput() 
     {
-        var speed = 0.05
+        var speed = 0.025
         var maxVelocity = 1.0
         var minVelocity = 0.01
 
@@ -786,7 +801,7 @@
         if (QPressed) CameraVelocity[1] -= speed
         if (EPressed) CameraVelocity[1] += speed
 
-        var lookSpeed = 0.00275
+        var lookSpeed = 0.001
         if (LeftArrowPressed)  CameraAngularVelocity[1] -= lookSpeed;
         if (RightArrowPressed) CameraAngularVelocity[1] += lookSpeed;
         if (UpArrowPressed)    CameraAngularVelocity[0] -= lookSpeed;

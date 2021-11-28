@@ -252,6 +252,22 @@ var LightingPassFragmentShaderFooterSource = `
                     Result *= vec4(1.0 - (1.0 / float(N_Samples)));
                 }
             }
+
+            if (Albedo.r < 0.075)
+            {
+                vec3 i = normalize(WorldPosition.xyz - CameraPosition.xyz);
+                Ray BounceRay = Ray(
+                    WorldPosition.xyz + Normal.xyz * 0.01, 
+                    normalize(reflect(i, Normal.xyz)));
+
+                Hit BounceHit = IntersectScene(BounceRay);
+                if (BounceHit.t < 1000.0)
+                {
+                    Result += vec4(BounceHit.colour, 1.0) * 0.025;
+                }
+            }
+
+
             Result.xyz += (s / float(N_Samples)) * 0.2;
         }
 
