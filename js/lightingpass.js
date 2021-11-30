@@ -59,7 +59,7 @@ var LightingPassFragmentShaderFooterSource = `
 
         seed += 0.01;
         return texture(
-            WhiteNoise, 
+            BlueNoise, 
             vec2(sin(Time * 10.0), cos(Time * 10.0)) * 0.01
                 + 
             (uv * 12.0) 

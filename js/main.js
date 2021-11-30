@@ -792,7 +792,7 @@
 
     function PollInput() 
     {
-        var speed = 0.025
+        var speed = 0.0025
         var maxVelocity = 1.0
         var minVelocity = 0.01
 
@@ -803,7 +803,7 @@
         if (QPressed) CameraVelocity[1] -= speed
         if (EPressed) CameraVelocity[1] += speed
 
-        var lookSpeed = 0.001
+        var lookSpeed = 0.0001
         if (LeftArrowPressed)  CameraAngularVelocity[1] -= lookSpeed;
         if (RightArrowPressed) CameraAngularVelocity[1] += lookSpeed;
         if (UpArrowPressed)    CameraAngularVelocity[0] -= lookSpeed;
