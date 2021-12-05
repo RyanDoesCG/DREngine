@@ -18,7 +18,23 @@
         </div>
         <div id="loading"><p>loading</p></div>
 
-        <canvas width="800" height="800" id="canv"></canvas>
+        <div id="controls">
+            <select name="shading" id="shading">
+                <option value="0">Ray Traced Diffuse GI</option>
+                <option value="1">Lambertian Diffuse</option>
+                <option value="2">Unlit</option>
+            </select>
+            <br>
+            <br>
+            <input type="checkbox" id="MSAAOn" name="MSAAOn">
+            <label for="MSAAOn">MSAA</label>
+            <br>
+            <br>
+            <input type="checkbox" id="TAAOn" name="TAAOn" checked>
+            <label for="TSAAOn">TAA</label>
+          </div>
+
+        <canvas width="600" height="600" id="canv"></canvas>
         <script src="js/maths.js"></script>
         <script src="js/noise.js"></script>
         <script src="js/geometry.js"></script>

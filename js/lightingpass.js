@@ -45,6 +45,8 @@ var LightingPassFragmentShaderHeaderSource =
     uniform float SphereSizes[NUM_SPHERES];
     #endif
 
+    uniform int ShadingMode;
+
     in vec2 frag_uvs;
 
     out vec4 out_color;
@@ -220,7 +222,7 @@ var LightingPassFragmentShaderFooterSource = `
         return result;
     }
 
-    vec4 raytraced_diffuse ()
+    vec4 raytraced_gi ()
     {
         vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
 
@@ -235,7 +237,7 @@ var LightingPassFragmentShaderFooterSource = `
             return Result;
         }
 
-     //   if (WorldPosition.w > 0.0)
+        if (WorldPosition.w > 0.0)
         {
             const int N_Samples = 2;
             vec3 s = vec3(0.0);
@@ -249,10 +251,16 @@ var LightingPassFragmentShaderFooterSource = `
                 if (BounceHit.t < 1000.0)
                 {
                     s += BounceHit.colour;
+                    if (N_Samples > 1)
+                    {
                     Result *= vec4(1.0 - (1.0 / float(N_Samples)));
+                    }
+
                 }
             }
 
+
+/*
             if (Albedo.b < 0.01)
             {
                 vec3 i = normalize(WorldPosition.xyz - CameraPosition.xyz);
@@ -266,9 +274,33 @@ var LightingPassFragmentShaderFooterSource = `
                     Result += vec4(BounceHit.colour, 1.0) * 0.025;
                 }
             }
+*/
 
 
             Result.xyz += (s / float(N_Samples)) * 0.2;
+        }
+
+        return Result;
+    }
+
+    vec4 raster_diffuse()
+    {
+        vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
+
+        vec4 Albedo = texture(AlbedoBuffer, frag_uvs);
+        vec4 Normal = vec4(normalize(vec3(-1.0) + texture(NormalBuffer, frag_uvs).xyz * 2.0).xyz, 1.0);
+        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
+ 
+        Result += Albedo;
+
+        if (WorldPosition.w > 0.0)
+        {
+            vec4 LightPosition = vec4(0.0, 3.35, 0.0, 0.0);
+            vec3 ToLight = normalize(LightPosition.xyz - WorldPosition.xyz);
+
+            float d = (max(0.0, dot(Normal.xyz, ToLight.xyz)));// + random();
+
+            Result *= 0.01 + d;
         }
 
         return Result;
@@ -292,9 +324,23 @@ var LightingPassFragmentShaderFooterSource = `
     {
         vec4 Result;
 
-        Result = (raytraced_diffuse());
+        if (ShadingMode == 0)
+        {
+            Result = raytraced_gi();
+        }
+        else
+        if (ShadingMode == 1)
+        {
+            Result = raster_diffuse();
+        }
+        else
+        if (ShadingMode == 2)
+        {
+            Result = basePass();
+        }
 
         //Result = basePass();
+        //Result = raster_diffuse();
 
         out_color = Result;
         

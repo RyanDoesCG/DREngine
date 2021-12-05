@@ -11,6 +11,8 @@ var basePassVertexShaderSource =
     uniform float Time;
     uniform vec2 WindowSize;
 
+    uniform int ShouldJitter;
+
     in vec3 vertex_position;
     in vec3 vertex_normal;
     in vec2 vertex_uv;
@@ -38,8 +40,11 @@ var basePassVertexShaderSource =
         float y = random(vec2(0.0, Time) * 10.0);
 
         mat4 jitter_proj = proj;
-        jitter_proj[2][0] = (x * 2.0 - 1.0) / WindowSize.x;
-        jitter_proj[2][1] = (y * 2.0 - 1.0) / WindowSize.y;
+        if (ShouldJitter == 1)
+        {
+            jitter_proj[2][0] = (x * 2.0 - 1.0) / WindowSize.x;
+            jitter_proj[2][1] = (y * 2.0 - 1.0) / WindowSize.y;
+        }
 
         frag_worldpos = vec4(translations[gl_InstanceID] + scales[gl_InstanceID] * vertex_position, 1.0);
 

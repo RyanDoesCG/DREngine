@@ -1,12 +1,14 @@
 
 (function () 
 {
-    let MSAA = true
+    let MSAA = document.getElementById('MSAAOn')
+    let TAA  = document.getElementById('TAAOn')
 
     var canvas = document.getElementById('canv')
     var gl = canvas.getContext("webgl2")
     var ui = document.getElementById("ui")
     var notes = document.getElementById("notes")
+    var controls = document.getElementById("controls")
     var size = document.getElementById("size")
 
     var extensions = gl.getSupportedExtensions();
@@ -171,6 +173,7 @@
     var basePassWindowSizeLocation = gl.getUniformLocation(basePassShaderProgram, "WindowSize")
     var basePassTimeUniform = gl.getUniformLocation(basePassShaderProgram, "Time")
     var basePassColorUniform = gl.getUniformLocation(basePassShaderProgram, "Color")
+    var basePassJitterUniform = gl.getUniformLocation(basePassShaderProgram, "ShouldJitter")
 
     var LightingPassPerlinNoiseSampler = gl.getUniformLocation(LightingPassShaderProgram, "PerlinNoise")
     var LightingPassWhiteNoiseSampler = gl.getUniformLocation(LightingPassShaderProgram, "WhiteNoise")
@@ -192,6 +195,7 @@
     var LightingPassCameraPositionUniform = gl.getUniformLocation(LightingPassShaderProgram, "CameraPosition")
     var LightingPassViewToWorldUniform = gl.getUniformLocation(LightingPassShaderProgram, "ViewToWorld");
     var LightingPassWorldToViewUniform = gl.getUniformLocation(LightingPassShaderProgram, "WorldToView")
+    var LightingPassShadingModeUniform = gl.getUniformLocation(LightingPassShaderProgram, "ShadingMode")
 
     var TAAPassWorldPositionBufferSampler = gl.getUniformLocation(TAAPassShaderProgram, "WorldPositionBuffer")
     var TAAPassDepthBufferSampler = gl.getUniformLocation(TAAPassShaderProgram, "DepthBuffer")
@@ -645,7 +649,7 @@
     function BasePass () 
     {
         gl.viewport(0, 0, canvas.width, canvas.height);
-        if (MSAA)
+        if (MSAA.checked)
         {
             gl.bindFramebuffer(gl.FRAMEBUFFER, MSAAFramebufferA);
         }
@@ -668,6 +672,7 @@
         gl.uniform1f(basePassTimeUniform, frameID);
         gl.uniformMatrix4fv(basePassProjMatrixLocation, false, projMatrix)
         gl.uniformMatrix4fv(basePassViewMatrixLocation, false, worldToViewMatrix)
+        gl.uniform1i(basePassJitterUniform, TAA.checked ? 1 : 0);
 
         var BoxPositionsToRasterize = [...RasterBoxPositions]
         var BoxColoursToRasterize   = [...RasterBoxColours]
@@ -702,7 +707,7 @@
         SpherePositionsToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
         SphereColoursToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
 
-        if (MSAA)
+        if (MSAA.checked)
         {
             gl.bindFramebuffer(gl.READ_FRAMEBUFFER, albedoBufferFrameBufferRead);
             gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, albedoBufferFrameBufferWrite);
@@ -731,9 +736,16 @@
     {
         gl.viewport(0, 0, canvas.width, canvas.height);
 
-        LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
+        if (TAA.checked)
+        {
+            LightingPassFrameBuffer = createFramebuffer(gl, LightingBuffers[0])
+            gl.bindFramebuffer(gl.FRAMEBUFFER, LightingPassFrameBuffer);
+        }
+        else
+        {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        }
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, LightingPassFrameBuffer);
         gl.useProgram(LightingPassShaderProgram);
 
         gl.activeTexture(gl.TEXTURE0);
@@ -778,6 +790,8 @@
         gl.uniformMatrix4fv(LightingPassViewToWorldUniform, false, (viewToWorldMatrix))
         gl.uniformMatrix4fv(LightingPassWorldToViewUniform, false, (worldToViewMatrix))
 
+        gl.uniform1i(LightingPassShadingModeUniform, document.getElementById('shading').selectedIndex);
+
         gl.bindVertexArray(screenGeometryVertexArray);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
@@ -788,7 +802,7 @@
     {
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.clearColor(0, 0, 0, 0);
+        gl.clearColor(0.01, 0.01, 0.01, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.useProgram(TAAPassShaderProgram);
 
@@ -875,7 +889,7 @@
     {
         BasePass();
         LightingPass();
-        TAAPass();
+        if (TAA.checked) TAAPass();
         frameID++;
     }
 
@@ -909,12 +923,14 @@
         {
             ui.style.opacity = "0.0";
             notes.style.opacity = "0.0";
+            controls.style.opacity = "0.0";
             size.style.opacity = "0.0";
         }
         else
         {
             ui.style.opacity = "1.0";
             notes.style.opacity = "1.0";
+            controls.style.opacity = "1.0";
             size.style.opacity = "1.0";
         }
 
