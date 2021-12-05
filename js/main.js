@@ -1,5 +1,8 @@
+
 (function () 
 {
+    let MSAA = true
+
     var canvas = document.getElementById('canv')
     var gl = canvas.getContext("webgl2")
     var ui = document.getElementById("ui")
@@ -43,17 +46,100 @@
             TAAPassFragmentShaderFooterSource))
 
     // FRAME BUFFERS
-    let MSAA = 1.0
-    var albedoBuffer = createColourTexture(gl,   Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA), gl.RGBA, gl.UNSIGNED_BYTE)
-    var normalBuffer = createColourTexture(gl,   Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA), gl.RGBA, gl.UNSIGNED_BYTE)
-    var worldposBuffer = createColourTexture(gl, Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA), gl.RGBA32F, gl.FLOAT)
-    var depthBuffer  = createDepthTexture(gl,    Math.floor(canvas.width * MSAA), Math.floor(canvas.height * MSAA))
+    var albedoBuffer   = createColourTexture(gl,   Math.floor(canvas.width), Math.floor(canvas.height), gl.RGBA, gl.UNSIGNED_BYTE)
+    var normalBuffer   = createColourTexture(gl,   Math.floor(canvas.width), Math.floor(canvas.height), gl.RGBA, gl.UNSIGNED_BYTE)
+    var worldposBuffer = createColourTexture(gl,   Math.floor(canvas.width), Math.floor(canvas.height), gl.RGBA32F, gl.FLOAT)
+    var depthBuffer    = createDepthTexture(gl,    Math.floor(canvas.width), Math.floor(canvas.height))
+
+    var albedoBufferFrameBufferWrite = createFramebuffer(gl, albedoBuffer);
+    var normalBufferFrameBufferWrite = createFramebuffer(gl, normalBuffer);
+    var worldposBufferFrameBufferWrite = createFramebuffer(gl, worldposBuffer);
+
     var basePassFrameBuffer = createFramebuffer(gl, 
         albedoBuffer, 
         normalBuffer,
         worldposBuffer,
         depthBuffer)
 
+    // MSAA Frame Buffers
+    var MSAAFramebufferA = gl.createFramebuffer();
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, MSAAFramebufferA);
+
+    var albedoRenderbuffer   = gl.createRenderbuffer(); 
+    gl.bindRenderbuffer(gl.RENDERBUFFER, albedoRenderbuffer);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER,
+        gl.getParameter(gl.MAX_SAMPLES),
+        gl.RGBA8, 
+        canvas.width,
+        canvas.height);
+
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, 
+        gl.COLOR_ATTACHMENT0, 
+        gl.RENDERBUFFER, 
+        albedoRenderbuffer);
+
+    var normalRenderbuffer   = gl.createRenderbuffer(); 
+    gl.bindRenderbuffer(gl.RENDERBUFFER, normalRenderbuffer);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER,
+        gl.getParameter(gl.MAX_SAMPLES),
+        gl.RGBA8, 
+        canvas.width,
+        canvas.height);
+
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, 
+        gl.COLOR_ATTACHMENT1, 
+        gl.RENDERBUFFER, 
+        normalRenderbuffer);
+
+    var worldposRenderBuffer = gl.createRenderbuffer(); 
+    gl.bindRenderbuffer(gl.RENDERBUFFER, worldposRenderBuffer);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER,
+        gl.getParameter(gl.MAX_SAMPLES),
+        gl.RGBA32F, 
+        canvas.width,
+        canvas.height);
+
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, 
+        gl.COLOR_ATTACHMENT2, 
+        gl.RENDERBUFFER, 
+        worldposRenderBuffer);
+    
+    var depthRenderbuffer   = gl.createRenderbuffer(); 
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderbuffer);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER,
+        gl.getParameter(gl.MAX_SAMPLES),
+        gl.DEPTH_COMPONENT24, 
+        canvas.width,
+        canvas.height);
+
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, 
+        gl.DEPTH_ATTACHMENT, 
+        gl.RENDERBUFFER, 
+        depthRenderbuffer);
+
+    var albedoBufferFrameBufferRead = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, albedoBufferFrameBufferRead);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, 
+        gl.COLOR_ATTACHMENT0, 
+        gl.RENDERBUFFER, 
+        albedoRenderbuffer);
+
+    var normalBufferFrameBufferRead = createFramebuffer(gl, normalBuffer);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, normalBufferFrameBufferRead);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, 
+        gl.COLOR_ATTACHMENT0, 
+        gl.RENDERBUFFER, 
+        normalRenderbuffer);
+
+    var worldposBufferFrameBufferRead = createFramebuffer(gl, worldposBuffer);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, worldposBufferFrameBufferRead);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, 
+        gl.COLOR_ATTACHMENT0, 
+        gl.RENDERBUFFER, 
+        worldposRenderBuffer);
+    
+        
     let NumHistorySamples = 15;
     var LightingBuffers = [NumHistorySamples]
     for (var i = 0; i < NumHistorySamples; ++i)
@@ -208,7 +294,57 @@
     // once on startup
     function BuildScene()
     {
-        
+        /*
+        // corridor
+        BoxPositions = [
+            // ground
+            0.0, -1.0, -6.0,
+            0.0, 1.0, -6.0,
+            1.0, 0.0, -6.0,
+            -1.0, 0.0, -5.0,
+            -5.0, -1.0, -9.0,
+            -5.0, 1.0, -9.0,
+            -4.0, 0.0, -10.0,
+        ]
+
+        BoxColours = [
+            0.1, 0.1, 0.1,
+            0.1, 0.1, 0.1,
+            0.1, 0.1, 0.1,
+            0.1, 0.1, 0.1,
+            0.1, 0.1, 0.1,
+            0.1, 0.1, 0.1,
+            0.1, 0.1, 0.1,
+        ]
+
+        BoxSizes = [
+            2.0, 0.1, 8.0,
+            2.0, 0.1, 8.0,
+            0.1, 2.0, 8.0,
+            0.1, 2.0, 6.0,
+            8.0, 0.1, 2.0,
+            8.0, 0.1, 2.0,
+            10.0, 2.0, 0.1,
+        ]
+
+        SpherePositions = [
+            -2.0, -0.4, -9.0,
+
+            0.5, -0.65, -9.0
+        ]
+
+        SphereColours = [
+            10.0, 10.0, 10.0,
+            10.0, 0.5, 0.001
+        ]
+
+        SphereSizes = [
+            0.5,
+            0.25
+        ]
+        */
+
+
         // Cornell Box for Debugging
         BoxPositions = [ 
             0.0, -0.2, 0.0, 
@@ -255,6 +391,8 @@
         return;
         
         
+        /*
+        Throughput stress test
         let GridSize = 60
         var NBoxes = 0    
         for (var x = 0; x <= GridSize; ++x)
@@ -278,6 +416,7 @@
                 NBoxes += 1;
             }
         }
+        */
     }
 
     function UpdateScene()
@@ -505,8 +644,16 @@
     // RENDER PASSES
     function BasePass () 
     {
-        gl.viewport(0, 0, canvas.width * MSAA, canvas.height * MSAA);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, basePassFrameBuffer);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        if (MSAA)
+        {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, MSAAFramebufferA);
+        }
+        else
+        {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, basePassFrameBuffer)
+        }
+
         gl.clearColor(0.01, 0.01, 0.01, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.clear(gl.DEPTH_BUFFER_BIT)
@@ -555,7 +702,29 @@
         SpherePositionsToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
         SphereColoursToRasterize.splice(0, MAX_RASTER_PRIMITIVES_PER_BATCH * 3)
 
-        
+        if (MSAA)
+        {
+            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, albedoBufferFrameBufferRead);
+            gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, albedoBufferFrameBufferWrite);
+            gl.blitFramebuffer(
+                0, 0, canvas.width, canvas.height,
+                0, 0, canvas.width, canvas.height,
+                gl.COLOR_BUFFER_BIT, gl.LINEAR);
+            
+            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, normalBufferFrameBufferRead);
+            gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, normalBufferFrameBufferWrite);
+            gl.blitFramebuffer(
+                0, 0, canvas.width, canvas.height,
+                0, 0, canvas.width, canvas.height,
+                gl.COLOR_BUFFER_BIT, gl.LINEAR);
+    
+            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, worldposBufferFrameBufferRead);
+            gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, worldposBufferFrameBufferWrite);
+            gl.blitFramebuffer(
+                0, 0, canvas.width, canvas.height,
+                0, 0, canvas.width, canvas.height,
+                gl.COLOR_BUFFER_BIT, gl.LINEAR);
+        }
     }
 
     function LightingPass () 
@@ -798,12 +967,12 @@
 
         if (DPressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraRight,  speed))
         if (APressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraRight, -speed))
-        if (WPressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraForward, speed))
-        if (SPressed) CameraVelocity = addv(CameraVelocity, multiplys(CameraForward, -speed))
+        if (WPressed) CameraVelocity = addv(CameraVelocity, multiplys(FORWARD, speed))
+        if (SPressed) CameraVelocity = addv(CameraVelocity, multiplys(FORWARD, -speed))
         if (QPressed) CameraVelocity[1] -= speed
         if (EPressed) CameraVelocity[1] += speed
 
-        var lookSpeed = 0.0001
+        var lookSpeed = 0.001
         if (LeftArrowPressed)  CameraAngularVelocity[1] -= lookSpeed;
         if (RightArrowPressed) CameraAngularVelocity[1] += lookSpeed;
         if (UpArrowPressed)    CameraAngularVelocity[0] -= lookSpeed;

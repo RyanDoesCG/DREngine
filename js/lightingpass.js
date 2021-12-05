@@ -38,7 +38,7 @@ var LightingPassFragmentShaderHeaderSource =
     uniform vec3 BoxColours[NUM_BOXES];
     uniform vec3 BoxSizes[NUM_BOXES];
 
-    #define NUM_SPHERES 1
+    #define NUM_SPHERES 2
     #if NUM_SPHERES > 0
     uniform vec3 SpherePositions[NUM_SPHERES];
     uniform vec3 SphereColours[NUM_SPHERES];
@@ -235,7 +235,7 @@ var LightingPassFragmentShaderFooterSource = `
             return Result;
         }
 
-        if (WorldPosition.w > 0.0)
+     //   if (WorldPosition.w > 0.0)
         {
             const int N_Samples = 2;
             vec3 s = vec3(0.0);
@@ -253,7 +253,7 @@ var LightingPassFragmentShaderFooterSource = `
                 }
             }
 
-            if (Albedo.r < 0.075)
+            if (Albedo.b < 0.01)
             {
                 vec3 i = normalize(WorldPosition.xyz - CameraPosition.xyz);
                 Ray BounceRay = Ray(
@@ -286,13 +286,15 @@ var LightingPassFragmentShaderFooterSource = `
 
         return Result;
     }
+    
 
     void main() 
     {
         vec4 Result;
 
         Result = (raytraced_diffuse());
-      //  Result = basePass();
+
+        //Result = basePass();
 
         out_color = Result;
         
