@@ -33,6 +33,7 @@ var TAAPassFragmentShaderHeaderSource =
     uniform mat4      View13;
     uniform mat4      View14;
 
+    uniform vec2 WindowSize;
     uniform float Time;
 
     in vec2 frag_uvs;
