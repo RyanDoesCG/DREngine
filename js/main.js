@@ -808,12 +808,15 @@
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.useProgram(TAAPassShaderProgram);
 
+        gl.uniform1i(TAAPassWorldPositionBufferSampler, 0)
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, worldposBuffer);
+
+        gl.uniform1i(TAAPassDepthBufferSampler, 1)
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, depthBuffer);
 
-        gl.uniform1i(TAAPassWorldPositionBufferSampler, 0);
+        gl.uniform1iv(TAAPassFrameBufferSamplers, [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
         gl.activeTexture(gl.TEXTURE2);
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[0]);
         gl.activeTexture(gl.TEXTURE3);
@@ -844,8 +847,6 @@
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[13])
         gl.activeTexture(gl.TEXTURE16);
         gl.bindTexture(gl.TEXTURE_2D, LightingBuffers[14])
-        
-        gl.uniform1iv(TAAPassFrameBufferSamplers, [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
 
         gl.uniformMatrix4fv(TAAPassView0Uniform,  false, ViewTransforms[0])
         gl.uniformMatrix4fv(TAAPassView1Uniform,  false, ViewTransforms[1])
@@ -889,10 +890,13 @@
 
     function Render () 
     {
-        BasePass();
-        LightingPass();
-        if (TAA.checked) TAAPass();
-        frameID++;
+        if (ImagesLoaded.every((e) => { return e }))
+        {
+            BasePass();
+            LightingPass();
+            if (TAA.checked && frameID > 16) TAAPass();
+            frameID++;
+        }
     }
 
     var then = 0
@@ -979,7 +983,7 @@
 
     function PollInput() 
     {
-        var speed = 0.0025
+        var speed = 0.01
         var maxVelocity = 1.0
         var minVelocity = 0.01
 
@@ -990,7 +994,7 @@
         if (QPressed) CameraVelocity[1] -= speed
         if (EPressed) CameraVelocity[1] += speed
 
-        var lookSpeed = 0.001
+        var lookSpeed = 0.002
         if (LeftArrowPressed)  CameraAngularVelocity[1] -= lookSpeed;
         if (RightArrowPressed) CameraAngularVelocity[1] += lookSpeed;
         if (UpArrowPressed)    CameraAngularVelocity[0] -= lookSpeed;
