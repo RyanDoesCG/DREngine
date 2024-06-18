@@ -53,18 +53,15 @@ var LightingPassFragmentShaderHeaderSource =
 `
 
 var LightingPassFragmentShaderFooterSource = `
-    float seed = 0.0;
     float random (float s)
     {
-        vec4 WorldPosition = texture(UVBuffer, frag_uvs);
-        vec2 uv = vec2(WorldPosition.x + WorldPosition.y, WorldPosition.z + WorldPosition.y);
+        vec2 uv =  gl_FragCoord.xy / 1024.0;
 
-      //  seed += 0.01;
         return texture(
             BlueNoise, 
-            vec2(sin(Time * 10.0), cos(Time * 10.0)) * 0.01
+            vec2(sin(Time), cos(Time))
                 + 
-            (uv * 12.0) 
+            (uv * 2.0) 
                 + 
             vec2(s)).x;
     }
@@ -238,7 +235,7 @@ var LightingPassFragmentShaderFooterSource = `
 
         if (WorldPosition.w > 0.0)
         {
-            const int N_Samples = 16;
+            const int N_Samples = 32;
             vec3 s = vec3(0.0);
             for (int i = 0; i < N_Samples; ++i)
             {
