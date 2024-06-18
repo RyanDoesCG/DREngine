@@ -194,8 +194,3 @@ var TAAPassFragmentShaderFooterSource = `
 
         out_color = vec4(Result.xyz / samples, 1.0);
     }`
-
-
-    /*
- `
-     */

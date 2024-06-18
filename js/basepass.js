@@ -36,8 +36,8 @@ var basePassVertexShaderSource =
         jitter_proj[2][1] = random(vec2(0.0, Time) * 10.0) * jitter;
         */
 
-        float x = random(vec2(Time, 0.0) * 10.0);
-        float y = random(vec2(0.0, Time) * 10.0);
+        float x = random(vec2(Time, 0.0) * 8.0);
+        float y = random(vec2(0.0, Time) * 8.0);
 
         mat4 jitter_proj = proj;
         if (ShouldJitter == 1)

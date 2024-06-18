@@ -425,12 +425,12 @@
 
     function UpdateScene()
     {
-        //for (var i = 0; i < BoxPositions.length; i += 3)
-        //{
-        //   // BoxPositions[i + 0] = Math.floor(BoxPositions[i + 0] + WorldCenterPoint[0])
-        //   // BoxPositions[i + 2] = Math.floor(BoxPositions[i + 2] + WorldCenterPoint[1])
-        //    BoxPositions[i + 1] = -10.0 + Math.floor(sin(Math.floor(BoxPositions[i + 0] + CameraPosition[0]) * 0.53423) + cos(Math.floor(BoxPositions[i + 2] + CameraPosition[2]) * 0.32532))
-        //}
+      //  for (var i = 0; i < BoxPositions.length; i += 3)
+      //  {
+      //     // BoxPositions[i + 0] = Math.floor(BoxPositions[i + 0] + WorldCenterPoint[0])
+      //     // BoxPositions[i + 2] = Math.floor(BoxPositions[i + 2] + WorldCenterPoint[1])
+      //      BoxPositions[i + 1] = -10.0 + Math.floor(sin(Math.floor(BoxPositions[i + 0] + CameraPosition[0]) * 0.53423) + cos(Math.floor(BoxPositions[i + 2] + CameraPosition[2]) * 0.32532))
+      //  }
     }
 
     // RASTER SCENE
