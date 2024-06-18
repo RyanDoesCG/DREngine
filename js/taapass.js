@@ -15,10 +15,8 @@ var TAAPassFragmentShaderHeaderSource =
 
     #define NFrames 15
 
-    uniform sampler2D WorldPositionBuffer;
-    uniform sampler2D DepthBuffer;
-
     uniform sampler2D Frames[NFrames];
+    uniform sampler2D WorldPositionBuffer;
     uniform mat4      View0;
     uniform mat4      View1;
     uniform mat4      View2;
@@ -30,16 +28,10 @@ var TAAPassFragmentShaderHeaderSource =
     uniform mat4      View8;
     uniform mat4      View9;
     uniform mat4      View10;
-    uniform mat4      View11;
+    uniform mat4      View11; 
     uniform mat4      View12;
     uniform mat4      View13;
     uniform mat4      View14;
-
-    uniform vec4 CameraPosition;
-    uniform vec4 CameraForward;
-
-    uniform float Near;
-    uniform float Far;
 
     uniform float Time;
 
@@ -48,149 +40,98 @@ var TAAPassFragmentShaderHeaderSource =
 `
 
 var TAAPassFragmentShaderFooterSource = `
-
-
-    bool shouldRejectSample (vec2 uv)
-    {
-        bool inRange = uv.x < 1.0 && uv.x > 0.0 && uv.y < 1.0 && uv.y > 0.0;
-        bool farFromCurrentPixel = length(uv - frag_uvs) > 0.01;
-        return !inRange || farFromCurrentPixel;
-    }
-
     void main() 
     {
         vec4 Result = vec4(0.0, 0.0, 0.0, 1.0);
 
         vec4 position = texture(WorldPositionBuffer, frag_uvs);
 
-        const float MaxWeight = 1.0;
-        const float MinWeight = 0.25;
+        vec4 NeighbourMin = vec4(1.0);
+        vec4 NeighbourMax = vec4(0.0);
 
-        float weight = 1.0;
-        float samples = 0.0;
+        ivec2 frag_uvs_int = ivec2(frag_uvs * vec2(1024.0, 1024.0));
+
+        vec4 Neighbour0 = texelFetch(Frames[0], frag_uvs_int + ivec2(0, 1), 0);
+        NeighbourMin = min(NeighbourMin, Neighbour0);
+        NeighbourMax = max(NeighbourMax, Neighbour0);
+
+        vec4 Neighbour1 = texelFetch(Frames[0], frag_uvs_int + ivec2(0, -1), 0);
+        NeighbourMin = min(NeighbourMin, Neighbour1);
+        NeighbourMax = max(NeighbourMax, Neighbour1);
+
+        vec4 Neighbour2 = texelFetch(Frames[0], frag_uvs_int + ivec2(1, 0), 0);
+        NeighbourMin = min(NeighbourMin, Neighbour2);
+        NeighbourMax = max(NeighbourMax, Neighbour2);
+
+        vec4 Neighbour3 = texelFetch(Frames[0], frag_uvs_int + ivec2(-1, 0), 0);
+        NeighbourMin = min(NeighbourMin, Neighbour3);
+        NeighbourMax = max(NeighbourMax, Neighbour3);
 
         vec4 pl = position;
         vec2 uv = frag_uvs;
-        Result += texture(Frames[0], uv) * weight;
-        samples += 1.0;
+        Result += clamp(texture(Frames[0], uv), NeighbourMin, NeighbourMax);
 
         if (position.w == 0.0)
         {
-            out_color = vec4(Result.xyz, 1.0) * weight;
+            out_color = vec4(Result.xyz, 1.0);
             return;
         }
 
         pl = View1 * position;
         uv = (0.5 * (pl.xy / pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[1],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[1], uv), NeighbourMin, NeighbourMax);
 
         pl = View2 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[2],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[2], uv), NeighbourMin, NeighbourMax);
 
         pl = View3 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[3],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[3], uv), NeighbourMin, NeighbourMax);
 
         pl = View4 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[4],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[4], uv), NeighbourMin, NeighbourMax);
 
         pl = View5 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[5],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[5], uv), NeighbourMin, NeighbourMax);
 
         pl = View6 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[6],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[6], uv), NeighbourMin, NeighbourMax);
 
         pl = View7 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[7],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[7], uv), NeighbourMin, NeighbourMax);
 
         pl = View8 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[8],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[8], uv), NeighbourMin, NeighbourMax);
 
         pl = View9 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[9],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[9], uv), NeighbourMin, NeighbourMax);
 
         pl = View10 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[10],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[10], uv), NeighbourMin, NeighbourMax);
 
         pl = View11 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[11],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[11], uv), NeighbourMin, NeighbourMax);
 
         pl = View12 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[12],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[12], uv), NeighbourMin, NeighbourMax);
 
         pl = View13 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[13],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[13], uv), NeighbourMin, NeighbourMax);
 
         pl = View14 * position;
         uv = (0.5 * (pl.xy/ pl.w) + 0.5);
-        if (!shouldRejectSample(uv))
-        {
-            Result += texture(Frames[14],  uv) * weight;
-            samples += 1.0;
-        }
+        Result += clamp(texture(Frames[14], uv), NeighbourMin, NeighbourMax);
 
-        out_color = vec4(Result.xyz / samples, 1.0);
+        out_color = vec4(Result.xyz * 0.0666, 1.0);
     }`
