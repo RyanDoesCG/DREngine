@@ -54,32 +54,31 @@ var LightingPassFragmentShaderHeaderSource =
 
 var LightingPassFragmentShaderFooterSource = `
     float seed = 0.0;
-    float random ()
+    float random (float s)
     {
         vec4 WorldPosition = texture(UVBuffer, frag_uvs);
         vec2 uv = vec2(WorldPosition.x + WorldPosition.y, WorldPosition.z + WorldPosition.y);
 
-        seed += 0.01;
+      //  seed += 0.01;
         return texture(
             BlueNoise, 
             vec2(sin(Time * 10.0), cos(Time * 10.0)) * 0.01
                 + 
             (uv * 12.0) 
                 + 
-            vec2(seed)).x;
+            vec2(s)).x;
     }
 
-    float random (float min, float max)
+    float random (float min, float max, float seed)
     {
-        return min + random() * (max - min);
+        return min + random(seed) * abs(max - min);
     }
 
-    vec3 randomDirection()
+    vec3 randomDirection(float seed)
     {
-        float x = random(-1.0, 1.0);
-        float y = random(-1.0, 1.0);
-        float z = random(-1.0, 1.0);
-
+        float x = random(-1.0, 1.0, seed + 0.124124);
+        float y = random(-1.0, 1.0, seed + 1.634553);
+        float z = random(-1.0, 1.0, seed + 0.987234);
         return normalize(vec3(x, y, z));
     }
 
@@ -239,13 +238,13 @@ var LightingPassFragmentShaderFooterSource = `
 
         if (WorldPosition.w > 0.0)
         {
-            const int N_Samples = 2;
+            const int N_Samples = 16;
             vec3 s = vec3(0.0);
             for (int i = 0; i < N_Samples; ++i)
             {
                 Ray BounceRay = Ray(
                     WorldPosition.xyz + Normal.xyz * 0.01, 
-                    normalize(Normal.xyz + randomDirection()));
+                    normalize(Normal.xyz + randomDirection(float(i) * 0.41234)));
 
                 Hit BounceHit = IntersectScene(BounceRay);
                 if (BounceHit.t < 1000.0)
@@ -253,29 +252,11 @@ var LightingPassFragmentShaderFooterSource = `
                     s += BounceHit.colour;
                     if (N_Samples > 1)
                     {
-                    Result *= vec4(1.0 - (1.0 / float(N_Samples)));
+                        Result *= vec4(1.0 - (1.0 / float(N_Samples)));
                     }
 
                 }
             }
-
-
-/*
-            if (Albedo.b < 0.01)
-            {
-                vec3 i = normalize(WorldPosition.xyz - CameraPosition.xyz);
-                Ray BounceRay = Ray(
-                    WorldPosition.xyz + Normal.xyz * 0.01, 
-                    normalize(reflect(i, Normal.xyz)));
-
-                Hit BounceHit = IntersectScene(BounceRay);
-                if (BounceHit.t < 1000.0)
-                {
-                    Result += vec4(BounceHit.colour, 1.0) * 0.025;
-                }
-            }
-*/
-
 
             Result.xyz += (s / float(N_Samples)) * 0.2;
         }

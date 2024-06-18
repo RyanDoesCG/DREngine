@@ -545,10 +545,12 @@
     }
     
     // CAMERA
-    var CameraPosition = vec4(0.0, 0.0, 0.0, 1.0)
+    var CameraPosition = vec4(0.0, 2.0, 9.0, 0.0);
     var CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
 
-    var CameraRotation = new Float32Array([0.0, 0.0, 0.0])
+
+
+    var CameraRotation = new Float32Array([0.1, 0.0, -1.0]);
     var CameraAngularVelocity = new Float32Array([0.0, 0.0, 0.0])
 
     var LastCameraPosition = CameraPosition
