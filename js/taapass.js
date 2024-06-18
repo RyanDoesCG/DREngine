@@ -50,7 +50,7 @@ var TAAPassFragmentShaderFooterSource = `
         vec4 NeighbourMin = vec4(1.0);
         vec4 NeighbourMax = vec4(0.0);
 
-        ivec2 frag_uvs_int = ivec2(frag_uvs * vec2(1024.0, 1024.0));
+        ivec2 frag_uvs_int = ivec2(frag_uvs * WindowSize);
 
         vec4 Neighbour0 = texelFetch(Frames[0], frag_uvs_int + ivec2(0, 1), 0);
         NeighbourMin = min(NeighbourMin, Neighbour0);

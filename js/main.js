@@ -1,4 +1,3 @@
-
 (function () 
 {
     let MSAA = document.getElementById('MSAAOn')
@@ -48,6 +47,12 @@
             TAAPassFragmentShaderFooterSource))
 
     // FRAME BUFFERS
+    const MAX_BUFFER_WIDTH = 1024
+    const MAX_BUFFER_HEIGHT = 1024
+   // log("allocating render targets at " + Math.min(this.canvas.clientWidth, MAX_BUFFER_WIDTH) + "x" +  Math.min(this.canvas.clientHeight, MAX_BUFFER_HEIGHT))
+    canvas.width = Math.min(canvas.clientWidth, MAX_BUFFER_WIDTH)
+    canvas.height = Math.min(canvas.clientHeight, MAX_BUFFER_HEIGHT)
+
     var albedoBuffer   = createColourTexture(gl,   Math.floor(canvas.width), Math.floor(canvas.height), gl.RGBA, gl.UNSIGNED_BYTE)
     var normalBuffer   = createColourTexture(gl,   Math.floor(canvas.width), Math.floor(canvas.height), gl.RGBA, gl.UNSIGNED_BYTE)
     var worldposBuffer = createColourTexture(gl,   Math.floor(canvas.width), Math.floor(canvas.height), gl.RGBA32F, gl.FLOAT)
@@ -175,6 +180,7 @@
     var basePassColorUniform = gl.getUniformLocation(basePassShaderProgram, "Color")
     var basePassJitterUniform = gl.getUniformLocation(basePassShaderProgram, "ShouldJitter")
 
+    var LightingPassWindowSizeLocation = gl.getUniformLocation(LightingPassShaderProgram, "WindowSize")
     var LightingPassPerlinNoiseSampler = gl.getUniformLocation(LightingPassShaderProgram, "PerlinNoise")
     var LightingPassWhiteNoiseSampler = gl.getUniformLocation(LightingPassShaderProgram, "WhiteNoise")
     var LightingPassBlueNoiseSampler= gl.getUniformLocation(LightingPassShaderProgram, "BlueNoise")
@@ -225,6 +231,8 @@
     var TAAPassFarUniform = gl.getUniformLocation(TAAPassShaderProgram, "Far")
     var TAAPassTimeUniform = gl.getUniformLocation(TAAPassShaderProgram, "Time")
     
+    var TAAPassWindowSizeUniform = gl.getUniformLocation(TAAPassShaderProgram, "WindowSize")
+
     // Screen Pass Geometry Resources
     var screenGeometryVertexArray = gl.createVertexArray();
     gl.bindVertexArray(screenGeometryVertexArray);
@@ -792,6 +800,8 @@
         gl.uniformMatrix4fv(LightingPassViewToWorldUniform, false, (viewToWorldMatrix))
         gl.uniformMatrix4fv(LightingPassWorldToViewUniform, false, (worldToViewMatrix))
 
+        gl.uniform2fv(LightingPassWindowSizeLocation, [canvas.width, canvas.height])
+
         gl.uniform1i(LightingPassShadingModeUniform, document.getElementById('shading').selectedIndex);
 
         gl.bindVertexArray(screenGeometryVertexArray);
@@ -869,6 +879,7 @@
         gl.uniform1f(TAAPassNearUniform, Near);
         gl.uniform1f(TAAPassFarUniform, Far);
         gl.uniform1f(TAAPassTimeUniform, frameID);
+        gl.uniform2fv(TAAPassWindowSizeUniform, [canvas.width, canvas.height])
 
         gl.bindVertexArray(screenGeometryVertexArray);
         gl.drawArrays(gl.TRIANGLES, 0, 6);

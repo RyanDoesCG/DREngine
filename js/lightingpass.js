@@ -45,6 +45,7 @@ var LightingPassFragmentShaderHeaderSource =
     uniform float SphereSizes[NUM_SPHERES];
     #endif
 
+    uniform vec2 WindowSize;
     uniform int ShadingMode;
 
     in vec2 frag_uvs;
@@ -55,7 +56,7 @@ var LightingPassFragmentShaderHeaderSource =
 var LightingPassFragmentShaderFooterSource = `
     float random (float s)
     {
-        vec2 uv =  gl_FragCoord.xy / 1024.0;
+        vec2 uv =  gl_FragCoord.xy / WindowSize;
 
         return texture(
             BlueNoise, 
