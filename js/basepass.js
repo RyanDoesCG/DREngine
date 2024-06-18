@@ -24,7 +24,7 @@ var basePassVertexShaderSource =
 
     float random (vec2 st) 
     {
-        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+        return fract(sin(dot(st, vec2(12.9898,78.233))) * 43758.5453123);
     }    
 
     void main() 
@@ -36,8 +36,8 @@ var basePassVertexShaderSource =
         jitter_proj[2][1] = random(vec2(0.0, Time) * 10.0) * jitter;
         */
 
-        float x = random(vec2(Time, 0.0) * 8.0);
-        float y = random(vec2(0.0, Time) * 8.0);
+        float x = random(vec2(Time, 0.0));
+        float y = random(vec2(0.0, Time));
 
         mat4 jitter_proj = proj;
         if (ShouldJitter == 1)
