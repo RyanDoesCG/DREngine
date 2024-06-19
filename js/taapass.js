@@ -70,7 +70,7 @@ var TAAPassFragmentShaderFooterSource = `
 
         vec4 pl = position;
         vec2 uv = frag_uvs;
-        Result += clamp(texture(Frames[0], uv), NeighbourMin, NeighbourMax);
+        Result += clamp(texture(Frames[0], uv), NeighbourMin, NeighbourMax); // ??
 
         if (position.w == 0.0)
         {

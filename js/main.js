@@ -49,7 +49,6 @@
     // FRAME BUFFERS
     const MAX_BUFFER_WIDTH = 1024
     const MAX_BUFFER_HEIGHT = 1024
-   // log("allocating render targets at " + Math.min(this.canvas.clientWidth, MAX_BUFFER_WIDTH) + "x" +  Math.min(this.canvas.clientHeight, MAX_BUFFER_HEIGHT))
     canvas.width = Math.min(canvas.clientWidth, MAX_BUFFER_WIDTH)
     canvas.height = Math.min(canvas.clientHeight, MAX_BUFFER_HEIGHT)
 
