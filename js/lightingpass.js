@@ -236,7 +236,7 @@ var LightingPassFragmentShaderFooterSource = `
 
         if (WorldPosition.w > 0.0)
         {
-            const int N_Samples = 32;
+            const int N_Samples = 64;
             vec3 s = vec3(0.0);
             for (int i = 0; i < N_Samples; ++i)
             {

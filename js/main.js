@@ -47,8 +47,8 @@
             TAAPassFragmentShaderFooterSource))
 
     // FRAME BUFFERS
-    const MAX_BUFFER_WIDTH = 1024
-    const MAX_BUFFER_HEIGHT = 1024
+    const MAX_BUFFER_WIDTH = 1080
+    const MAX_BUFFER_HEIGHT = 1080
     canvas.width = Math.min(canvas.clientWidth, MAX_BUFFER_WIDTH)
     canvas.height = Math.min(canvas.clientHeight, MAX_BUFFER_HEIGHT)
 
@@ -366,12 +366,12 @@
             0.0, 1.3, -2.0,  
             0.0, 3.4, 0.0,
             
-            0.0, 3.35, 0.0]
+            0.0, 3.36, 0.0]
         BoxColours = [ 
             0.1, 0.1, 0.1,
 
             0.14, 0.14, 0.14, 
-            0.8, 0.32, 0.32, 
+            0.8, 0.1, 0.1, 
             0.1, 0.8, 0.1, 
             0.1, 0.1, 0.1, 
             0.14, 0.14, 0.14,
@@ -386,7 +386,7 @@
             4.1, 4.1, 0.1, 
             4.1, 0.1, 4.0 ,
 
-            1.0, 0.01, 1.0]
+            1.0, 0.1, 1.0]
 
         SpherePositions = [
             1.0, -0.14, 1.5
@@ -552,12 +552,12 @@
     }
     
     // CAMERA
-    var CameraPosition = vec4(0.0, 2.0, 9.0, 0.0);
+    var CameraPosition = vec4(-1.7, 2.0, 9.0, 0.0);
     var CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
 
 
 
-    var CameraRotation = new Float32Array([0.1, 0.0, -1.0]);
+    var CameraRotation = new Float32Array([0.1, 0.2, 1.0]);
     var CameraAngularVelocity = new Float32Array([0.0, 0.0, 0.0])
 
     var LastCameraPosition = CameraPosition
@@ -960,10 +960,10 @@
             CameraForward[1].toFixed(1) + ", " + 
             CameraForward[2].toFixed(1) + "</p>"
 
-        ui.innerHTML +="<p>" + BoxPositions.length / 3 + " boxes in scene </p>";
-        ui.innerHTML +="<p>" + RasterBoxPositions.length / 3 + " boxes sent to raster </p>";
-        ui.innerHTML +="<p>" + RTBoxPositions.length / 3 + " boxes in ray tracing </p>";
-        ui.innerHTML +="<p>" + Culled + " culled with dot </p>";
+      //  ui.innerHTML +="<p>" + BoxPositions.length / 3 + " boxes in scene </p>";
+      //  ui.innerHTML +="<p>" + RasterBoxPositions.length / 3 + " boxes sent to raster </p>";
+      //  ui.innerHTML +="<p>" + RTBoxPositions.length / 3 + " boxes in ray tracing </p>";
+      //  ui.innerHTML +="<p>" + Culled + " culled with dot </p>";
 
         size.innerHTML = "<p>" + canvas.width + " x " + canvas.height + "</p>"
         size.innerHTML += "<p>" + canvas.clientWidth + " x " + canvas.clientHeight + "</p>"
@@ -1077,10 +1077,10 @@
 
         if (event.key == 'r')
         {
-            CameraPosition = vec4(0.0, 2.0, 9.0, 0.0);
+            CameraPosition = vec4(-1.7, 2.0, 9.0, 0.0);
             CameraVelocity = vec4(0.0, 0.0, 0.0, 0.0)
 
-            CameraRotation = new Float32Array([0.1, 0.0, -1.0]);
+            CameraRotation = new Float32Array([0.1, 0.2, 1.0]);
             CameraAngularVelocity = vec3(0.0, 0.0, 0.0, 0.0)
         }
     }
